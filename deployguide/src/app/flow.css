@@ -1,0 +1,243 @@
+.task-disclosure {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  margin: 15px 0;
+  background: var(--surface);
+  overflow: hidden;
+}
+.runtime-note {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  padding: 12px 14px;
+  background: var(--surface-soft);
+  border-left: 2px solid var(--green);
+  margin: 14px 0;
+}
+.task-disclosure > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 17px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.task-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.task-number {
+  width: 25px;
+  height: 25px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 10px var(--font-mono);
+  flex-shrink: 0;
+  color: var(--green);
+}
+.task-hint {
+  margin-left: auto;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+.task-disclosure[open] > summary {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+.task-disclosure[open] .task-hint {
+  font-size: 0;
+}
+.task-disclosure[open] .task-hint:after {
+  content: "−";
+  font-size: 18px;
+}
+.task-content {
+  padding: 0 17px 18px;
+}
+.task-content .before-run {
+  margin-top: 17px;
+}
+.task-content .before-run p {
+  font-size: 12px;
+}
+.task-check {
+  margin: 16px 0 0;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.task-check summary {
+  font-size: 12px;
+  color: var(--green);
+  font-weight: 600;
+  cursor: pointer;
+}
+.task-check > p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  margin: 14px 0;
+}
+.optional-task {
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 13px;
+  margin: 16px 0;
+}
+.optional-task summary {
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 550;
+  line-height: 1.6;
+}
+.optional-task summary > span {
+  font-size: 9px;
+  background: var(--green-soft);
+  color: var(--green);
+  border-radius: 3px;
+  padding: 3px 6px;
+  margin-left: 8px;
+}
+.optional-task > p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 13px 0;
+}
+.prose-panel > section {
+  margin: 20px 0;
+}
+.prose-panel > section h3,
+.prose-panel > section h4 {
+  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.2px;
+}
+.prose-panel > section > p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.9;
+}
+.step-navigation {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.step-next {
+  flex-wrap: wrap;
+}
+.step-next .primary-button {
+  font-size: 11px;
+}
+.reference-nav-heading {
+  margin: 23px 0 9px;
+}
+.automation-nav {
+  margin: 18px 0 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.automation-nav summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 0;
+}
+.automation-nav summary span,
+.automation-nav > small {
+  display: block;
+  font-weight: 400;
+  font-size: 10px;
+  color: var(--muted);
+  margin: 7px 0;
+}
+.automation-downloads {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 16px;
+  margin-bottom: 24px;
+}
+.automation-downloads strong {
+  font-size: 14px;
+}
+.automation-downloads p {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 8px 0 14px;
+}
+.automation-downloads > div:last-child {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.advanced-settings {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  margin: 16px 0;
+  padding: 13px;
+}
+.advanced-settings > summary {
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+}
+.advanced-settings > summary > span {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: 10px;
+}
+.advanced-settings > .form-grid {
+  margin-top: 17px;
+}
+.version-summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+.version-summary strong {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.version-summary small {
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+@media (max-width: 600px) {
+  .task-disclosure > summary {
+    padding: 14px 12px;
+    font-size: 13px;
+  }
+  .task-content {
+    padding: 0 11px 12px;
+  }
+  .task-hint {
+    font-size: 9px;
+  }
+  .advanced-settings > summary > span {
+    display: block;
+    margin: 4px 0 0 16px;
+  }
+  .step-navigation {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .code-block pre {
+    font-size: 11px;
+  }
+}
