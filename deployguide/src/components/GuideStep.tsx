@@ -63,7 +63,7 @@ export function GuideStep({
         </span>
         <p>{step.why}</p>
       </div>
-      {!step.parts && (
+      {!step.parts && tab !== "commands" && (
         <div className="before-run">
           <Info size={16} />
           <div>

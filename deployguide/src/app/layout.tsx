@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./flow.css";
+import "./typography.css";
 export const metadata: Metadata = {
   title: "DeployGuide — From localhost to live.",
   description:

@@ -142,10 +142,14 @@ $base = ${pq(base)}
 $seed = "$base\\releases\\bootstrap"
 if (Test-Path -LiteralPath $seed) { throw 'Seed already exists' }
 New-Item -ItemType Directory -Path $seed | Out-Null
-${php ? `& ${pq("C:\\PHP\\" + c.runtime + "\\php.exe")} ${pq(c.directory + "\\artisan")} down --retry=60
+${
+  php
+    ? `& ${pq("C:\\PHP\\" + c.runtime + "\\php.exe")} ${pq(c.directory + "\\artisan")} down --retry=60
 if ($LASTEXITCODE -ne 0) { throw 'Could not enter maintenance' }
 # On setup failure, run artisan up against the original directory to recover.
-` : ""}\
+`
+    : ""
+}\
 # /XJ avoids following directory junctions. /E includes empty directories.
 robocopy.exe ${pq(c.directory)} $seed /E /COPY:DAT /DCOPY:DAT /XJ /R:2 /W:2${node ? " /XD node_modules" : ""}
 if ($LASTEXITCODE -ge 8) { throw 'Seed copy failed' }
@@ -450,6 +454,19 @@ export function generateAutomation(c: GuideConfig) {
                 servicePermission(c),
                 language,
                 "Server · administrator",
+                true,
+              ),
+            ]
+          : []),
+        ...(php
+          ? [
+              block(
+                "Leave bootstrap maintenance after switching paths",
+                win
+                  ? `& ${pq("C:\\PHP\\" + c.runtime + "\\php.exe")} ${pq(current + "\\artisan")} up\nif ($LASTEXITCODE -ne 0) { throw 'Could not leave maintenance' }`
+                  : `php${c.runtime} ${q(current + "/artisan")} up`,
+                language,
+                "Server · deployment user",
                 true,
               ),
             ]

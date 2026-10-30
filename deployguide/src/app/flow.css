@@ -148,6 +148,10 @@
   font-weight: 600;
   padding: 6px 0;
 }
+.automation-nav > button {
+  width: 100%;
+  margin: 4px 0;
+}
 .automation-nav summary span,
 .automation-nav > small {
   display: block;

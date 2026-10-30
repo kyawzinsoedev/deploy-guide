@@ -1,6 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import {
+  mkdirSync,
+  mkdtempSync,
+  writeFileSync,
+  readFileSync,
+  readlinkSync,
+  symlinkSync,
+  rmSync,
+} from "node:fs";
+import { join, resolve, sep } from "node:path";
 import { format } from "prettier";
 import { defaultConfig, stacks } from "../src/content/stacks";
 import {
@@ -18,6 +28,102 @@ import {
 } from "../src/lib/cicd";
 import { toMarkdown } from "../src/lib/downloads";
 import type { GuideConfig } from "../src/lib/types";
+import { powershellQuote } from "../src/lib/validation";
+
+test("Windows static release activates and restores previous files after an HTTP failure", (context) => {
+  if (process.platform !== "win32") {
+    context.skip("Requires Windows junctions and PowerShell");
+    return;
+  }
+  const qaRoot = resolve(process.cwd(), "qa");
+  mkdirSync(qaRoot, { recursive: true });
+  const fixture = mkdtempSync(join(qaRoot, "release-simulation-"));
+  // All filesystem mutations are isolated inside this explicitly checked fixture.
+  assert.ok(resolve(fixture).startsWith(qaRoot + sep));
+  try {
+    const base = join(fixture, "app-releases"),
+      seed = join(base, "releases", "bootstrap"),
+      payload = join(fixture, "payload");
+    for (const dir of [
+      join(base, "control"),
+      join(base, "shared"),
+      join(seed, "public"),
+      join(payload, "public"),
+    ])
+      mkdirSync(dir, { recursive: true });
+    writeFileSync(join(base, "control", "ready"), "");
+    writeFileSync(join(base, "shared", "web.config"), "<configuration />");
+    writeFileSync(join(seed, "public", "index.html"), "old release");
+    writeFileSync(join(payload, "public", "index.html"), "new release");
+    symlinkSync(seed, join(base, "current"), "junction");
+    const archive = join(fixture, "release.tgz");
+    const tar = spawnSync("tar.exe", ["-czf", archive, "public"], {
+      cwd: payload,
+      encoding: "utf8",
+    });
+    assert.equal(tar.status, 0, tar.stderr);
+    const c: GuideConfig = {
+      ...defaultConfig,
+      os: "windows-2025",
+      directory: "C:\\Sites\\my-app",
+      stack: "html",
+      runtime: "none",
+    };
+    const script = generateWindowsDeploy(c).replace(
+      "$base = 'C:\\Sites\\my-app-releases'",
+      "$base = " + powershellQuote(base),
+    );
+    assert.ok(script.includes("$base = " + powershellQuote(base)));
+    const scriptFile = join(fixture, "deploy.ps1");
+    writeFileSync(scriptFile, script);
+    const run = (id: string, fail: boolean) =>
+      spawnSync(
+        "powershell.exe",
+        [
+          "-NoProfile",
+          "-NonInteractive",
+          "-Command",
+          `
+      $fixtureBase = ${powershellQuote(base)}
+      function Start-Sleep { param($Seconds) }
+      function Invoke-WebRequest {
+        param([switch]$UseBasicParsing, $Uri, $TimeoutSec)
+        ${fail ? "throw 'Simulated HTTP failure'" : ""}
+        $content = if ($Uri.EndsWith('/deployguide-release.txt')) { Get-Content -LiteralPath "$fixtureBase\\current\\public\\deployguide-release.txt" -Raw } else { 'ok' }
+        [pscustomobject]@{ StatusCode=200; Content=$content }
+      }
+      try { & ${powershellQuote(scriptFile)} -Archive ${powershellQuote(archive)} -ReleaseId ${powershellQuote(id)}; exit 0 } catch { Write-Output $_; exit 1 }
+    `,
+        ],
+        { encoding: "utf8" },
+      );
+    const first = "a".repeat(40) + "-1-1";
+    const success = run(first, false);
+    assert.equal(success.status, 0, success.stdout + success.stderr);
+    assert.equal(
+      readFileSync(join(base, "current", "public", "index.html"), "utf8"),
+      "new release",
+    );
+    assert.equal(
+      resolve(readlinkSync(join(base, "current"))),
+      resolve(base, "releases", first),
+    );
+    const failed = run("b".repeat(40) + "-2-1", true);
+    assert.equal(failed.status, 1, failed.stdout + failed.stderr);
+    assert.equal(
+      resolve(readlinkSync(join(base, "current"))),
+      resolve(base, "releases", first),
+    );
+    assert.equal(
+      readFileSync(join(seed, "public", "index.html"), "utf8"),
+      "old release",
+    );
+  } finally {
+    const checked = resolve(fixture);
+    assert.ok(checked.startsWith(qaRoot + sep) && checked !== qaRoot);
+    rmSync(checked, { recursive: true, force: true });
+  }
+});
 
 const configurations: GuideConfig[] = serverOptions.flatMap((os) =>
   stacks.flatMap((stack) =>

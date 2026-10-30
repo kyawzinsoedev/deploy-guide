@@ -93,10 +93,14 @@ ${php ? "        if: hashFiles('package.json') != ''\n" : ""}        # Pin an ex
   }      - name: Check and build
         run: |
 ${indent(checks)}
-${!isStaticApp(c) ? `      - name: Verify production dependency installation
+${
+  !isStaticApp(c)
+    ? `      - name: Verify production dependency installation
         run: |
 ${indent(php ? "composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction\ncomposer check-platform-reqs --no-dev" : pm === "npm" ? "npm ci --omit=dev" : "pnpm install --prod --frozen-lockfile")}
-` : ""}\
+`
+    : ""
+}\
       - name: Package this checked revision
         if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         run: |

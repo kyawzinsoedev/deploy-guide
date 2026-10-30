@@ -17,4 +17,6 @@ npm run dev
 
 This project is kept local at the user's request.
 
+Includes Ubuntu 24.04/Nginx and Windows Server 2022/2025/IIS guides, selectable PHP 8.2–8.5, and optional six-step GitHub Actions CI/CD setup with downloadable workflow and release scripts. See the validation record for tested behavior and live-server testing limits.
+
 The simplified guide contains 5 steps for HTML, 6 for static builds, and 7 for server applications. Reference material and conditional Laravel work are separate from the main checklist. Use only one `npm run dev` process for this checkout; an existing development server can be reused at the URL printed by Next.js.

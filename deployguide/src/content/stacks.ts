@@ -8,7 +8,7 @@ export const stacks: Stack[] = [
     badge: "Static files",
     runtime: "none",
     description:
-      "Nginx reads your files and sends them directly to visitors. No application runtime or build process is needed.",
+      "The web server reads your files and sends them directly to visitors. No application runtime or build process is needed.",
     sources: [
       {
         label: "Nginx beginner’s guide",
@@ -24,7 +24,7 @@ export const stacks: Stack[] = [
     badge: "Static build",
     runtime: "24",
     description:
-      "Vite compiles your React project into a dist directory. Nginx serves that output; Node is only a build tool.",
+      "Vite compiles your React project into a dist directory. Nginx or IIS serves that output; Node is only a build tool.",
     sources: [
       {
         label: "Vite: deploying a static site",
@@ -40,7 +40,7 @@ export const stacks: Stack[] = [
     badge: "Reverse proxy",
     runtime: "24",
     description:
-      "A Node process handles requests on a private port. Nginx accepts public traffic and passes it to that process.",
+      "A Node process handles requests on a private port. Nginx or IIS accepts public traffic and passes it to that process.",
     sources: [
       {
         label: "Express production best practices",
@@ -73,7 +73,7 @@ export const stacks: Stack[] = [
     badge: "Node server",
     runtime: "24",
     description:
-      "Choose a Node server for request-time rendering, Server Actions and other server features. systemd keeps next start alive behind Nginx.",
+      "Choose a Node server for request-time rendering, Server Actions and other server features. An OS service keeps next start running behind the web server.",
     sources: [
       {
         label: "Next.js self-hosting",
@@ -89,7 +89,7 @@ export const stacks: Stack[] = [
     badge: "PHP-FPM",
     runtime: "8.3",
     description:
-      "Nginx serves public assets and passes PHP requests to PHP-FPM. Only Laravel’s public directory is exposed to the web.",
+      "Nginx uses PHP-FPM on Ubuntu; IIS uses PHP FastCGI on Windows. Only Laravel’s public directory is exposed to the web.",
     sources: [
       {
         label: "Laravel 12 deployment",

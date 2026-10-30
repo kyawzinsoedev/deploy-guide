@@ -1,0 +1,261 @@
+/* Shared reading scale; small viewports keep readable text instead of shrinking it. */
+:root {
+  --type-caption: 0.75rem;
+  --type-label: 0.8125rem;
+  --type-ui: 0.875rem;
+  --type-body: 1rem;
+  --type-code: 0.8125rem;
+}
+
+@media screen {
+  body {
+    font-size: var(--type-body);
+  }
+
+  .step-goal,
+  .why-card p,
+  .before-run p,
+  .task-content .before-run p,
+  .note,
+  .task-check > p,
+  .optional-task > p,
+  .prose-panel > section > p,
+  .prose-panel dd,
+  .breakdown dd,
+  .problems-details p,
+  .step-next p,
+  .sources-page > p,
+  .reference-intro,
+  .glossary-grid p,
+  .troubleshooting-list details > div p,
+  .hero-body,
+  .learning-section > div > p {
+    font-size: var(--type-body);
+    line-height: 1.8;
+  }
+
+  .side-nav button,
+  .stack-nav button,
+  .sidebar-build,
+  .step-nav button,
+  .search-trigger,
+  .topnav,
+  .theme-menu button,
+  .primary-button,
+  .secondary-button,
+  .text-link,
+  .hero .primary-button,
+  .hero .text-link,
+  .wizard-footer > .primary-button,
+  .guide-heading > .secondary-button,
+  .step-next .primary-button,
+  .step-tabs button,
+  .before-run strong,
+  .task-check summary,
+  .optional-task summary,
+  .breakdown summary,
+  .problems-details summary,
+  .problems-details h4,
+  .automation-nav summary,
+  .automation-downloads p,
+  .runtime-note,
+  .explanation-callout,
+  .choice-help,
+  .checkbox-label,
+  .example-notice,
+  .modal-intro,
+  .field > span,
+  .advanced-settings > summary,
+  .version-summary,
+  .review-grid dd,
+  .stack-card > p,
+  .section-heading p,
+  .journey-list p,
+  .sources-list a {
+    font-size: var(--type-ui);
+  }
+
+  .side-nav button,
+  .stack-nav button,
+  .sidebar-build,
+  .step-nav button {
+    min-height: 44px;
+  }
+
+  .field input,
+  .field select,
+  .large-search input,
+  .task-disclosure > summary,
+  .automation-downloads strong,
+  .troubleshooting-list summary {
+    font-size: var(--type-body);
+  }
+
+  .guide-heading p,
+  .guide-toolbar,
+  .guide-toolbar > span,
+  .guide-toolbar > div,
+  .complete-button,
+  .code-toolbar,
+  .guide-facts dt,
+  .guide-facts dd,
+  .reviewed-link,
+  .glossary-tooltip,
+  .sidebar-progress > div:first-child,
+  .wizard-stacks button > span:not(.next-icon),
+  .review-grid dt {
+    font-size: var(--type-label);
+  }
+
+  .nav-heading,
+  .small-label,
+  .eyebrow,
+  .guide-heading .eyebrow,
+  .step-eyebrow,
+  .breadcrumb,
+  .guide-domain,
+  .brand-caption,
+  .sidebar-progress small,
+  .local-note strong,
+  .local-note p,
+  .sidebar-version,
+  .automation-nav summary span,
+  .automation-nav > small,
+  .field > small,
+  .privacy-note,
+  .runtime-note small,
+  .version-summary strong,
+  .version-summary small,
+  .advanced-settings > summary > span,
+  .code-toolbar button,
+  .code-context,
+  .breakdown summary > span,
+  .problems-details summary > span,
+  .step-next small,
+  .aside-footnote,
+  .reviewed-link small,
+  .page-footer,
+  .stack-footnote,
+  .stack-footnote button,
+  .hero-meta,
+  .stack-card-bottom,
+  .search-footnote,
+  .search-results small {
+    font-size: var(--type-caption);
+  }
+
+  .wizard-stacks button small,
+  .wizard-progress > div,
+  .wizard-footer > span {
+    font-size: var(--type-caption);
+  }
+
+  .code-block pre,
+  .breakdown dt,
+  .prose-panel dt {
+    font-size: var(--type-code);
+    line-height: 1.85;
+  }
+
+  .task-disclosure > summary,
+  .step-eyebrow,
+  .guide-toolbar,
+  .guide-toolbar > div,
+  .code-context,
+  .sidebar-version {
+    flex-wrap: wrap;
+  }
+
+  .step-tabs {
+    gap: 18px;
+  }
+  .step-tabs button {
+    white-space: nowrap;
+  }
+  .sidebar-build > svg {
+    flex-shrink: 0;
+  }
+  .sidebar-version {
+    gap: 8px;
+  }
+  .guide-facts dl > div {
+    gap: 10px;
+  }
+  .guide-facts dd {
+    overflow-wrap: anywhere;
+  }
+  .stack-card > p {
+    min-height: 0;
+  }
+  .stack-card-bottom {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .compact
+    .diagram-node
+    > span:not(.nginx-symbol):not(.node-number):not(.port-label) {
+    font-size: 12px;
+  }
+  .compact .diagram-node small,
+  .compact .diagram-insight,
+  .compact .diagram-label,
+  .compact .diagram-connector > button {
+    font-size: 10px;
+  }
+  .compact .diagram-connector > button {
+    max-width: calc(50% - 14px);
+    white-space: normal;
+    line-height: 1.3;
+    text-align: left;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .step-tabs {
+    gap: 10px;
+  }
+  .step-tabs button {
+    gap: 4px;
+    font-size: var(--type-label);
+    white-space: normal;
+  }
+  .guide-toolbar > div {
+    justify-content: flex-start;
+    gap: 14px;
+  }
+  .stack-grid {
+    grid-template-columns: 1fr;
+  }
+  .stack-card h3 {
+    font-size: 20px;
+  }
+  .stack-card {
+    padding: 20px;
+  }
+  .stack-card-top {
+    margin-bottom: 14px;
+  }
+  .mode-tag {
+    font-size: 11px;
+  }
+  .wizard-stacks {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media screen and (max-width: 360px) {
+  .step-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .step-tabs button {
+    justify-content: center;
+    text-align: center;
+    min-width: 0;
+  }
+  .step-tabs button > svg {
+    display: none;
+  }
+}

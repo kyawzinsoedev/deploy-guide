@@ -302,7 +302,7 @@ export function Wizard({
                     field(
                       "port",
                       "Private application port",
-                      "1024–65535. Nginx connects on loopback only.",
+                      `1024–65535. ${isWindows(config.os) ? "IIS" : "Nginx"} connects on loopback only.`,
                     )}
                   <div className="full-width">
                     {field(
@@ -327,7 +327,7 @@ export function Wizard({
                 <summary>I’m not sure what these values mean</summary>
                 <p>
                   Your host provides the server IP. Your registrar manages the
-                  domain’s DNS records. The username is a dedicated Linux
+                  domain’s DNS records. The username is a dedicated server
                   account this guide creates, not your provider login. The
                   directory is where your project lives. Node’s port is
                   internal: 3000 is a common choice, but it must be unused.

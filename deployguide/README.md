@@ -45,9 +45,21 @@ The wizard asks for app name, domain, and IP up front; username, directory, repo
 | Express                  | Nginx reverse-proxies a loopback process      | Node 24, managed by systemd     |
 | Next.js static export    | Nginx serves generated routes                 | `out/`; Node 24 for build only  |
 | Next.js Node application | Nginx reverse-proxies `next start`            | Node 24, managed by systemd     |
-| Laravel 12               | Nginx serves `public/` and delegates PHP      | Ubuntu PHP 8.3 FPM              |
+| Laravel 12               | Nginx serves `public/` and delegates PHP      | PHP 8.2, 8.3, 8.4 or 8.5 FPM    |
 
-The explicit OS baseline is **Ubuntu 24.04 LTS**. The guide instructions were reviewed against official documentation on **2026-10-28**; they have not been executed on a live Ubuntu instance during this build. A successful website build does not verify a user's server or every application. Project scripts, dependencies, SSH ports, database choices and provider firewalls need project-specific inspection.
+The Linux baseline is **Ubuntu 24.04 LTS**. **Windows Server 2022 and 2025, x64 Desktop Experience** have separate native IIS guides for all six paths. IIS serves static files, uses URL Rewrite/ARR for Node, and FastCGI with the selected x64 NTS PHP build for Laravel. Node uses one WinSW Windows service under LocalService. PHP-FPM and systemd commands are never used as Windows instructions. Native Windows production queue workers/Horizon are outside this guide because PHP lacks PCNTL timeout support.
+
+PHP **8.3** remains the Ubuntu default because it comes from Ubuntu 24.04's distribution repositories. **8.2, 8.4 and 8.5** use the explicitly disclosed third-party Ondřej Surý PPA. Package availability was checked against its Noble amd64 index. The selected version changes package names, CLI calls, FPM services, sockets and optional workers. PHP 8.5 is the latest stable branch reviewed; PHP 8.2 upstream security support ends 2026-12-31. Composer dependencies and extensions must independently support the selected version. No runtime API resolves “latest.”
+
+Windows, PHP choices and CI/CD sources were reviewed on **2026-10-29**. Instructions have not been executed on live Ubuntu/Windows servers or in a connected GitHub repository during this revision. Website tests and syntax checks do not constitute production-server verification. See `VALIDATION.md` for the exact scope.
+
+## Optional CI/CD automation
+
+Each generated guide includes a separate **six-step GitHub Actions CI/CD section**, with its own locally saved checkmarks. It does not lengthen the 5–7-step first deployment. Search, print and Markdown include it; downloadable `deployguide.yml` and `deploy.sh` or `deploy.ps1` use the selected stack, OS, PHP version, package manager and application paths.
+
+The documented default uses GitHub-hosted pull-request/push checks and a deliberate `workflow_dispatch` production release from protected `main`. The release job needs passing checks, a private repository and the `production` environment. A dedicated, non-administrator self-hosted deployment runner on the server polls GitHub over HTTPS. All repository workflow authors must be trusted with its account; labels are routing, not access controls. Private environments and independent approval features depend on the GitHub plan. No repository, runner, credentials or workflow are created by this website.
+
+The guide covers the test contract, runner permissions, versioned releases, persistent secrets/data, one-time configuration changes, pipeline files, smoke tests and recovery. Action commits are pinned to reviewed release SHAs. Runtime dependencies are installed from lockfiles and production installation is checked in CI. Production PHP/Node state stays outside artifacts. Release switching retains old files and attempts recovery after activation/HTTP failures; this is not a zero-downtime guarantee. Laravel migrations, queue/scheduler coordination and optional public upload links require separately reviewed project-specific work. Database rollback is never implied by code rollback.
 
 ## Structure and architectural choices
 
@@ -57,10 +69,15 @@ src/components/          Interactive browser UI, wizard, diagram, tabs, modal an
 src/content/stacks.ts    Typed path metadata, defaults, review date and source registry
 src/content/guides.ts    Structured teaching tasks, adapted to each stack
 src/content/launch-flow.ts  Stack-specific 5–7 stage composition and optional work
+src/content/windows-guides.ts  Native IIS/PowerShell teaching tasks and sources
+src/content/platforms.ts  Explicit OS/PHP versions, defaults and support notes
+src/content/automation.ts  Optional six-step CI/CD setup, rationale and recovery
 src/content/glossary.ts  Local definitions used by keyboard/touch disclosures
 src/content/troubleshooting.ts  Symptom, cause, investigation and fix records
 src/lib/types.ts         Shared strict TypeScript contracts
 src/lib/commands.ts      Pure Nginx and systemd configuration generators
+src/lib/windows-commands.ts  IIS XML and WinSW configuration generators
+src/lib/cicd.ts          Pinned GitHub workflow and Bash/PowerShell release generators
 src/lib/generator.ts     Public guide-generation interface
 src/lib/validation.ts    Input constraints, POSIX quoting, configuration identity
 src/lib/downloads.ts     Complete Markdown serialization and browser downloads
@@ -72,13 +89,13 @@ Next.js App Router pre-renders the app to static HTML. Interactive components hy
 
 Guide data uses a single typed `Step` contract for goal, rationale, mechanics, prerequisites, command blocks, breakdown, expected result, verification, problems and next action. Screen UI, Markdown and print consume the same data. Commands and configuration are never independently retyped in downloads.
 
-Nginx is the public entry point for every guide; systemd is the only Node process manager. Static exports have no process service. Laravel only exposes its public directory, and executes only the PHP front controller. The beginner path uses a maintenance window and timestamped backups; it does not promise zero-downtime releases.
+Ubuntu uses Nginx and systemd; Windows uses IIS and one WinSW service for Node. Static sites have no application service. Laravel exposes only its public directory and executes only the PHP front controller. Screen UI, downloads and print consume the same typed content. Keeping OS-specific generators separate avoids mixing shells, service models and privilege assumptions.
 
 ## Input and command safety
 
 - Every generator rejects invalid input before interpolation. Domain names, IPv4 addresses, non-root usernames, unprivileged TCP ports, application names and paths have narrow allowlists. Control characters, credentials in URLs, query strings, path traversal and unknown version combinations are rejected.
-- Project directories are intentionally restricted to a direct child of `/var/www`. Broad path support is not safe to add casually: shell, Nginx and systemd each have different parsers.
-- Values in shell arguments use a POSIX single-quote helper. Values in Nginx/systemd configuration must pass the stricter context-specific allowlists.
+- Project directories are intentionally restricted to a direct child of `/var/www` or `C:\Sites`. Windows reserved filenames and shell control characters are rejected. Broad path support requires reviewing every target parser.
+- Shell arguments use POSIX or PowerShell single-quote helpers. Nginx, systemd, XML and workflow values also pass narrow context-specific allowlists.
 - Repository input accepts HTTPS without embedded credentials. The website never asks for passwords, private keys, tokens or environment secrets.
 - Node processes run as a dedicated account and bind to loopback. The public firewall permits only the intended SSH and HTTP(S) access. Commands test Nginx before reloading.
 - The example IP, `203.0.113.10`, is reserved for documentation. The UI calls this out before generation. Replace example values before deployment.
@@ -86,6 +103,10 @@ Nginx is the public entry point for every guide; systemd is the only Node proces
 ## Browser features
 
 The workspace offers six stack cards, a validated wizard, local documentation search (`Ctrl/Cmd + K`), sticky step navigation, syntax-colored code with copy feedback, command explanations, expected-result tabs, an interactive request diagram, a symptom search, glossary disclosures, four persistent themes, a complete print layout, Markdown download and the initial HTTP Nginx configuration download.
+
+The guide's architecture panel slides into a narrow right-hand rail on desktop, giving the instructions more room. Its arrow button reopens it. On smaller screens it is a collapsible section above the instructions, initially closed unless a saved preference says otherwise. The choice is saved locally; the toggle supports keyboard input, hidden controls leave the tab order, and animations respect reduced-motion preferences. `components/GuideLayout.tsx` owns this interaction separately from guide content.
+
+The left navigation can also collapse into a 64px icon rail, with its own saved preference. Its toggle sits beside search when expanded. Search, guide steps and other destinations remain clickable when collapsed, with accessible names and hover labels. `components/DocumentationLayout.tsx` owns this layout and keeps the mobile menu independent of the desktop choice. Shared screen typography lives in `app/typography.css`: reading text is 16px, navigation is 14px, and commands are 13px by default, expressed in relative units. Phone layouts wrap controls and stack selection cards to preserve these readable sizes; print styling remains separate.
 
 Checklist progress is saved under a canonical configuration key containing all builder settings. Editing the configuration switches to that configuration's own progress. A confirmed reset clears only the current checklist. A checkmark means **the user marked it complete**, never a server test. Storage failures keep the current session usable and display feedback. Clearing browser storage removes preferences and progress; Markdown remains a portable guide.
 
@@ -98,7 +119,7 @@ Checklist progress is saved under a canonical configuration key containing all b
 5. Add regression tests for its request path, service model, public root, downloads and invalid combinations.
 6. Test generation in the browser, at mobile width, with keyboard input, all themes, reduced motion, print, and persisted progress.
 
-Adding an OS version requires a reviewed mapping for packages, PHP sockets, service defaults and runtime installation. Do not simply append a version to a dropdown. The current singular OS/runtime choices communicate the deliberately narrow baseline.
+Adding an OS version requires reviewed packages, runtime installation, service identities, permissions, web-server routing and automation behavior. Do not simply append a version to a dropdown. Add the baseline to `platforms.ts`, validation and the complete generation/escaping matrix. Review PHP support dates and framework compatibility separately from package availability.
 
 ## Maintaining technical accuracy
 

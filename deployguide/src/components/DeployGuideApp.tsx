@@ -14,6 +14,7 @@ import {
   Download,
   ExternalLink,
   FileCode2,
+  GitBranch,
   Layers,
   ListChecks,
   Menu,
@@ -35,10 +36,12 @@ import { themes, type ThemeId } from "@/lib/themes";
 import { downloadText, toMarkdown } from "@/lib/downloads";
 import type { GuideConfig, StackId } from "@/lib/types";
 import { Architecture } from "./Architecture";
-import { StackIcon } from "./icons";
+import { StackIcon, GuideNavIcon } from "./icons";
 import { Wizard } from "./Wizard";
 import { Modal } from "./Modal";
 import { GuideStep } from "./GuideStep";
+import { GuideLayout } from "./GuideLayout";
+import { DocumentationLayout } from "./DocumentationLayout";
 import {
   isWindows,
   osLabel,
@@ -222,7 +225,8 @@ export default function DeployGuideApp() {
   const searchResults = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return [];
-    return serverOptions
+    return [...serverOptions]
+      .sort((a, b) => Number(b.id === config.os) - Number(a.id === config.os))
       .flatMap((os) => stacks.map((stack) => ({ os: os.id, stack })))
       .flatMap(({ stack, os }) => {
         const targetConfig = {
@@ -369,131 +373,115 @@ export default function DeployGuideApp() {
           </button>
         </div>
       </header>
-      <div className="app-layout">
-        <aside
-          className={`sidebar ${mobileMenu ? "mobile-open" : ""}`}
-          aria-label="Documentation navigation"
-        >
+      <DocumentationLayout
+        mobileOpen={mobileMenu}
+        onCloseMobile={() => setMobileMenu(false)}
+        search={
           <button
             className="search-trigger"
             onClick={() => setSearchOpen(true)}
+            aria-label="Search documentation"
+            title="Search documentation (Ctrl/Cmd + K)"
           >
             <Search size={15} />
-            <span>Search the docs</span>
-            <kbd>⌘ K</kbd>
+            <span className="sidebar-label">Search docs</span>
           </button>
-          <span className="nav-heading">GETTING STARTED</span>
-          <nav className="side-nav">
+        }
+        sidebar={
+          <>
+            <span className="nav-heading">GETTING STARTED</span>
+            <nav className="side-nav">
+              <button
+                className={view === "home" ? "selected" : ""}
+                onClick={() => navigate("home")}
+                aria-label="Welcome to DeployGuide"
+                title="Welcome to DeployGuide"
+              >
+                <BookOpen size={16} />
+                <span className="sidebar-label">Welcome to DeployGuide</span>
+              </button>
+              <button
+                aria-label="How deployment works"
+                title="How deployment works"
+                onClick={() => {
+                  navigate("home");
+                  setTimeout(
+                    () =>
+                      document
+                        .getElementById("how-it-works")
+                        ?.scrollIntoView({ behavior: "smooth" }),
+                    80,
+                  );
+                }}
+              >
+                <Layers size={16} />
+                <span className="sidebar-label">How deployment works</span>
+              </button>
+              <button
+                onClick={() => openGuide(config, 0)}
+                aria-label="Before you begin"
+                title="Before you begin"
+              >
+                <ListChecks size={16} />
+                <span className="sidebar-label">Before you begin</span>
+              </button>
+            </nav>
+            <div className="sidebar-rule" />
+            <span className="nav-heading">YOUR DEPLOYMENT</span>
             <button
-              className={view === "home" ? "selected" : ""}
-              onClick={() => navigate("home")}
+              className="sidebar-build"
+              onClick={() => setWizard(config)}
+              aria-label={
+                view === "guide"
+                  ? "Edit your configuration"
+                  : "Build your guide"
+              }
+              title={
+                view === "guide"
+                  ? "Edit your configuration"
+                  : "Build your guide"
+              }
             >
-              <BookOpen size={16} />
-              Welcome to DeployGuide
+              <Settings2 size={16} />
+              <span className="sidebar-label">
+                {view === "guide"
+                  ? "Edit your configuration"
+                  : "Build your guide"}
+              </span>
+              <ChevronRight size={14} className="sidebar-label" />
             </button>
-            <button
-              onClick={() => {
-                navigate("home");
-                setTimeout(
-                  () =>
-                    document
-                      .getElementById("how-it-works")
-                      ?.scrollIntoView({ behavior: "smooth" }),
-                  80,
-                );
-              }}
-            >
-              <Layers size={16} />
-              How deployment works
-            </button>
-            <button onClick={() => openGuide(config, 0)}>
-              <ListChecks size={16} />
-              Before you begin
-            </button>
-          </nav>
-          <div className="sidebar-rule" />
-          <span className="nav-heading">YOUR DEPLOYMENT</span>
-          <button className="sidebar-build" onClick={() => setWizard(config)}>
-            <Settings2 size={16} />
-            {view === "guide" ? "Edit your configuration" : "Build your guide"}
-            <ChevronRight size={14} />
-          </button>
-          {view === "guide" ? (
-            <>
-              <div className="sidebar-progress">
-                <div>
-                  <span>Your checklist</span>
-                  <strong>
-                    {progress} / {guide.steps.length}
-                  </strong>
+            {view === "guide" ? (
+              <>
+                <div className="sidebar-progress">
+                  <div>
+                    <span>Your checklist</span>
+                    <strong>
+                      {progress} / {guide.steps.length}
+                    </strong>
+                  </div>
+                  <div className="progress-track">
+                    <motion.div
+                      animate={{
+                        width: `${(progress / guide.steps.length) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <small>Marked complete, not server verified.</small>
                 </div>
-                <div className="progress-track">
-                  <motion.div
-                    animate={{
-                      width: `${(progress / guide.steps.length) * 100}%`,
-                    }}
-                  />
-                </div>
-                <small>Marked complete, not server verified.</small>
-              </div>
-              <nav className="step-nav" aria-label="Guide steps">
-                {guide.steps.map((s, i) => (
-                  <button
-                    key={s.id}
-                    className={activeStep === i ? "selected" : ""}
-                    onClick={() => selectStep(i)}
-                    aria-current={activeStep === i ? "step" : undefined}
-                  >
-                    <span
-                      className={
-                        completed.includes(s.id) ? "step-dot done" : "step-dot"
-                      }
-                    >
-                      {completed.includes(s.id) ? (
-                        <Check size={10} />
-                      ) : (
-                        String(i + 1).padStart(2, "0")
-                      )}
-                    </span>
-                    <span>{s.title}</span>
-                  </button>
-                ))}
-                <span className="nav-heading reference-nav-heading">
-                  WHEN YOU NEED IT
-                </span>
-                {(guide.references ?? []).map((reference, i) => (
-                  <button
-                    key={reference.id}
-                    className={
-                      activeStep === guide.steps.length + i ? "selected" : ""
-                    }
-                    onClick={() => selectStep(guide.steps.length + i)}
-                  >
-                    <BookOpen size={13} />
-                    <span>{reference.title}</span>
-                  </button>
-                ))}
-                <details className="automation-nav" open={isAutomation}>
-                  <summary>
-                    CI/CD automation <span>Optional · 6 steps</span>
-                  </summary>
-                  <small>
-                    {guide.automation?.steps.filter((s) =>
-                      completed.includes(s.id),
-                    ).length ?? 0}{" "}
-                    of 6 marked complete
-                  </small>
-                  {guide.automation?.steps.map((s, i) => (
+                <nav className="step-nav" aria-label="Guide steps">
+                  {guide.steps.map((s, i) => (
                     <button
                       key={s.id}
-                      className={
-                        activeStep === automationStart + i ? "selected" : ""
-                      }
-                      aria-current={
-                        activeStep === automationStart + i ? "step" : undefined
-                      }
-                      onClick={() => selectStep(automationStart + i)}
+                      className={activeStep === i ? "selected" : ""}
+                      onClick={() => selectStep(i)}
+                      aria-current={activeStep === i ? "step" : undefined}
+                      aria-label={`Step ${i + 1}: ${s.title}`}
+                      title={`Step ${i + 1}: ${s.title}`}
                     >
+                      <GuideNavIcon
+                        id={s.id}
+                        complete={completed.includes(s.id)}
+                      />
                       <span
                         className={
                           completed.includes(s.id)
@@ -501,85 +489,172 @@ export default function DeployGuideApp() {
                             : "step-dot"
                         }
                       >
-                        {completed.includes(s.id) ? <Check size={10} /> : i + 1}
+                        {completed.includes(s.id) ? (
+                          <Check size={10} />
+                        ) : (
+                          String(i + 1).padStart(2, "0")
+                        )}
                       </span>
-                      <span>{s.title}</span>
+                      <span className="sidebar-label">{s.title}</span>
                     </button>
                   ))}
-                </details>
-                <button
-                  className={activeStep === sourceIndex ? "selected" : ""}
-                  onClick={() => selectStep(sourceIndex)}
-                >
-                  <BookOpen size={13} />
-                  <span>Sources & review notes</span>
-                </button>
-              </nav>
-            </>
-          ) : (
-            <>
-              <nav className="stack-nav" aria-label="Deployment paths">
-                {stacks.map((s) => (
-                  <button key={s.id} onClick={() => chooseStack(s.id)}>
-                    <StackIcon id={s.id} />
-                    <span>
-                      {s.name}
-                      {s.id === "next-static" ? (
-                        <small>Static</small>
-                      ) : s.id === "next-node" ? (
-                        <small>Node</small>
-                      ) : null}
+                  <span className="nav-heading reference-nav-heading">
+                    WHEN YOU NEED IT
+                  </span>
+                  {(guide.references ?? []).map((reference, i) => (
+                    <button
+                      key={reference.id}
+                      className={
+                        activeStep === guide.steps.length + i ? "selected" : ""
+                      }
+                      onClick={() => selectStep(guide.steps.length + i)}
+                      aria-label={reference.title}
+                      title={reference.title}
+                    >
+                      <BookOpen size={13} />
+                      <span className="sidebar-label">{reference.title}</span>
+                    </button>
+                  ))}
+                  <details className="automation-nav" open={isAutomation}>
+                    <summary
+                      aria-label="CI/CD automation"
+                      title="CI/CD automation"
+                    >
+                      <GitBranch
+                        size={18}
+                        className="sidebar-collapsed-icon"
+                        aria-hidden="true"
+                      />
+                      <span className="automation-title sidebar-label">
+                        CI/CD automation
+                      </span>
+                      <span className="sidebar-label">Optional · 6 steps</span>
+                    </summary>
+                    <small>
+                      {guide.automation?.steps.filter((s) =>
+                        completed.includes(s.id),
+                      ).length ?? 0}{" "}
+                      of 6 marked complete
+                    </small>
+                    {guide.automation?.steps.map((s, i) => (
+                      <button
+                        key={s.id}
+                        className={
+                          activeStep === automationStart + i ? "selected" : ""
+                        }
+                        aria-current={
+                          activeStep === automationStart + i
+                            ? "step"
+                            : undefined
+                        }
+                        onClick={() => selectStep(automationStart + i)}
+                        aria-label={`CI/CD step ${i + 1}: ${s.title}`}
+                        title={`CI/CD step ${i + 1}: ${s.title}`}
+                      >
+                        <GuideNavIcon
+                          id={s.id}
+                          complete={completed.includes(s.id)}
+                        />
+                        <span
+                          className={
+                            completed.includes(s.id)
+                              ? "step-dot done"
+                              : "step-dot"
+                          }
+                        >
+                          {completed.includes(s.id) ? (
+                            <Check size={10} />
+                          ) : (
+                            i + 1
+                          )}
+                        </span>
+                        <span className="sidebar-label">{s.title}</span>
+                      </button>
+                    ))}
+                  </details>
+                  <button
+                    className={activeStep === sourceIndex ? "selected" : ""}
+                    onClick={() => selectStep(sourceIndex)}
+                    aria-label="Sources & review notes"
+                    title="Sources & review notes"
+                  >
+                    <BookOpen size={13} />
+                    <span className="sidebar-label">
+                      Sources & review notes
                     </span>
                   </button>
-                ))}
-              </nav>
-              <div className="sidebar-rule" />
-              <span className="nav-heading">A LITTLE HELP</span>
-              <nav className="side-nav">
-                <button
-                  className={view === "glossary" ? "selected" : ""}
-                  onClick={() => navigate("glossary")}
-                >
-                  <CircleHelp size={16} />
-                  Words, explained
-                </button>
-                <button
-                  className={view === "troubleshoot" ? "selected" : ""}
-                  onClick={() => navigate("troubleshoot")}
-                >
-                  <Terminal size={16} />
-                  Something not working?
-                </button>
-              </nav>
-            </>
-          )}
-          <div className="sidebar-bottom">
-            <div className="local-note">
-              <span className="local-symbol">
-                <ShieldCheck size={19} />
-              </span>
-              <strong>Your server. Your control.</strong>
-              <p>
-                We explain. You deploy.
-                <br />
-                No server access required.
-              </p>
+                </nav>
+              </>
+            ) : (
+              <>
+                <nav className="stack-nav" aria-label="Deployment paths">
+                  {stacks.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => chooseStack(s.id)}
+                      aria-label={`${s.name} · ${s.badge}`}
+                      title={`${s.name} · ${s.badge}`}
+                    >
+                      <StackIcon id={s.id} />
+                      <span className="sidebar-label">
+                        {s.name}
+                        {s.id === "next-static" ? (
+                          <small>Static</small>
+                        ) : s.id === "next-node" ? (
+                          <small>Node</small>
+                        ) : null}
+                      </span>
+                    </button>
+                  ))}
+                </nav>
+                <div className="sidebar-rule" />
+                <span className="nav-heading">A LITTLE HELP</span>
+                <nav className="side-nav">
+                  <button
+                    className={view === "glossary" ? "selected" : ""}
+                    onClick={() => navigate("glossary")}
+                    aria-label="Words, explained"
+                    title="Words, explained"
+                  >
+                    <CircleHelp size={16} />
+                    <span className="sidebar-label">Words, explained</span>
+                  </button>
+                  <button
+                    className={view === "troubleshoot" ? "selected" : ""}
+                    onClick={() => navigate("troubleshoot")}
+                    aria-label="Something not working?"
+                    title="Something not working?"
+                  >
+                    <Terminal size={16} />
+                    <span className="sidebar-label">
+                      Something not working?
+                    </span>
+                  </button>
+                </nav>
+              </>
+            )}
+            <div className="sidebar-bottom">
+              <div className="local-note">
+                <span className="local-symbol">
+                  <ShieldCheck size={19} />
+                </span>
+                <strong>Your server. Your control.</strong>
+                <p>
+                  We explain. You deploy.
+                  <br />
+                  No server access required.
+                </p>
+              </div>
+              <div className="sidebar-version">
+                <span>
+                  <span className="live-dot" /> Ubuntu
+                </span>
+                <span>v1.0</span>
+              </div>
             </div>
-            <div className="sidebar-version">
-              <span>
-                <span className="live-dot" /> Ubuntu + Windows Server
-              </span>
-              <span>v1.0</span>
-            </div>
-          </div>
-        </aside>
-        {mobileMenu && (
-          <button
-            className="sidebar-scrim"
-            aria-label="Close navigation"
-            onClick={() => setMobileMenu(false)}
-          />
-        )}
+          </>
+        }
+      >
         <main
           id="main-content"
           ref={mainRef}
@@ -703,17 +778,19 @@ export default function DeployGuideApp() {
                         <span className={`stack-icon ${s.id}`}>
                           <StackIcon id={s.id} />
                         </span>
-                        <span className="mode-tag">{s.badge}</span>
+                        <span className="mode-tag">
+                          {s.id === "laravel" ? "PHP application" : s.badge}
+                        </span>
                       </div>
                       <h3>{s.name}</h3>
                       <p>{s.subtitle}</p>
                       <div className="stack-card-bottom">
                         <span>
                           {s.mode === "static"
-                            ? "Nginx → static files"
+                            ? "Web server → static files"
                             : s.mode === "node"
-                              ? "Nginx → Node.js"
-                              : "Nginx → PHP-FPM"}
+                              ? "Reverse proxy → Node.js"
+                              : "Web server → PHP"}
                         </span>
                         <ArrowUpRight size={17} />
                       </div>
@@ -767,7 +844,7 @@ export default function DeployGuideApp() {
                     {
                       n: "GO LIVE",
                       title: "Open the front door",
-                      text: "Nginx, DNS, HTTPS, verification—and a plan for what comes next.",
+                      text: "Nginx or IIS, DNS, HTTPS, verification—and optional CI/CD when you're ready.",
                     },
                   ].map((item) => (
                     <div key={item.n}>
@@ -883,158 +960,157 @@ export default function DeployGuideApp() {
                   </button>
                 </div>
               </div>
-              <div className="guide-layout">
-                <div className="guide-column">
-                  {isAutomation && (
-                    <div className="automation-downloads">
-                      <div>
-                        <strong>GitHub Actions · CI/CD</strong>
-                        <p>
-                          Optional after launch. Reviewed {guide.reviewedOn}.
-                          Download and review both files before enabling
-                          releases.
-                        </p>
-                      </div>
-                      <div>
-                        {guide.automation?.files.map((file) => (
-                          <button
-                            className="secondary-button"
-                            key={file.name}
-                            onClick={() => {
-                              downloadText(file.name, file.content);
-                              setNotice(`${file.name} download started.`);
-                            }}
-                          >
-                            <Download size={14} />
-                            {file.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {activeStep < sourceIndex ? (
-                    <GuideStep
-                      key={`${configKey(config)}-${activeStep}`}
-                      step={pages[activeStep]}
-                      index={
-                        isAutomation ? activeStep - automationStart : activeStep
-                      }
-                      complete={completed.includes(pages[activeStep].id)}
-                      onToggle={() => toggleStep(pages[activeStep].id)}
-                      total={
-                        isAutomation
-                          ? guide.automation!.steps.length
-                          : guide.steps.length
-                      }
-                      reference={
-                        activeStep >= guide.steps.length && !isAutomation
-                      }
-                      automation={isAutomation}
-                      onBack={() =>
-                        activeStep === 0
-                          ? navigate("home")
-                          : selectStep(activeStep - 1)
-                      }
-                      onNext={() =>
-                        selectStep(
-                          isAutomation
-                            ? activeStep + 1 < sourceIndex
-                              ? activeStep + 1
-                              : sourceIndex
-                            : activeStep >= guide.steps.length
-                              ? 0
-                              : activeStep === guide.steps.length - 1
-                                ? guide.steps.length + 1
-                                : activeStep + 1,
-                        )
-                      }
+              <GuideLayout
+                sidebar={
+                  <>
+                    <Architecture
+                      mode={guide.stack.mode}
+                      windows={isWindows(config.os)}
+                      compact
                     />
-                  ) : (
-                    <section className="sources-page">
-                      <span className="eyebrow">BUILT ON PRIMARY SOURCES</span>
-                      <h2>Trust, with a paper trail.</h2>
-                      <p>
-                        These instructions were reviewed against official
-                        documentation on <strong>{guide.reviewedOn}</strong>.
-                        They have not been executed on a live production server
-                        by DeployGuide. Verify package changes and project
-                        requirements before running them.
-                      </p>
-                      <div className="note">
-                        <InfoDot />
-                        <p>
-                          Supported baselines: Ubuntu 24.04 LTS with Nginx;
-                          Windows Server 2022/2025 with IIS; Node.js 24; Laravel
-                          12 with PHP 8.2–8.5. Select the combination supported
-                          by your application. Other operating systems and
-                          runtime combinations are outside this guide.
-                        </p>
-                      </div>
-                      <div className="sources-list">
-                        {guide.sources.map((s) => (
-                          <a
-                            key={s.url}
-                            href={s.url}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {s.label}
-                            <ExternalLink size={14} />
-                          </a>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-                </div>
-                <aside className="guide-aside">
-                  <span className="nav-heading">YOUR ARCHITECTURE</span>
-                  <Architecture
-                    mode={guide.stack.mode}
-                    windows={isWindows(config.os)}
-                    compact
-                  />
-                  <div className="guide-facts">
-                    <h3>The essentials</h3>
-                    <dl>
-                      <div>
-                        <dt>Server OS</dt>
-                        <dd>{osLabel(config.os)}</dd>
-                      </div>
-                      <div>
-                        <dt>Runtime</dt>
-                        <dd>{runtimeLabel(config)}</dd>
-                      </div>
-                      <div>
-                        <dt>Public entry</dt>
-                        <dd>
-                          {isWindows(config.os) ? "IIS" : "Nginx"} · 80 / 443
-                        </dd>
-                      </div>
-                      {guide.stack.mode === "node" && (
+                    <div className="guide-facts">
+                      <h3>The essentials</h3>
+                      <dl>
                         <div>
-                          <dt>Private app port</dt>
-                          <dd>127.0.0.1:{config.port}</dd>
+                          <dt>Server OS</dt>
+                          <dd>{osLabel(config.os)}</dd>
                         </div>
-                      )}
-                    </dl>
+                        <div>
+                          <dt>Runtime</dt>
+                          <dd>{runtimeLabel(config)}</dd>
+                        </div>
+                        <div>
+                          <dt>Public entry</dt>
+                          <dd>
+                            {isWindows(config.os) ? "IIS" : "Nginx"} · 80 / 443
+                          </dd>
+                        </div>
+                        {guide.stack.mode === "node" && (
+                          <div>
+                            <dt>Private app port</dt>
+                            <dd>127.0.0.1:{config.port}</dd>
+                          </div>
+                        )}
+                      </dl>
+                    </div>
+                    <button
+                      className="reviewed-link"
+                      onClick={() => selectStep(sourceIndex)}
+                    >
+                      <ShieldCheck size={16} />
+                      <span>
+                        Documentation reviewed
+                        <small>{guide.reviewedOn} · View sources</small>
+                      </span>
+                      <ArrowUpRight size={14} />
+                    </button>
+                    <p className="aside-footnote">
+                      A checked step records your progress. Only the checks you
+                      run can tell you about your server.
+                    </p>
+                  </>
+                }
+              >
+                {isAutomation && (
+                  <div className="automation-downloads">
+                    <div>
+                      <strong>GitHub Actions · CI/CD</strong>
+                      <p>
+                        Optional after launch. Reviewed {guide.reviewedOn}.
+                        Download and review both files before enabling releases.
+                      </p>
+                    </div>
+                    <div>
+                      {guide.automation?.files.map((file) => (
+                        <button
+                          className="secondary-button"
+                          key={file.name}
+                          onClick={() => {
+                            downloadText(file.name, file.content);
+                            setNotice(`${file.name} download started.`);
+                          }}
+                        >
+                          <Download size={14} />
+                          {file.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <button
-                    className="reviewed-link"
-                    onClick={() => selectStep(sourceIndex)}
-                  >
-                    <ShieldCheck size={16} />
-                    <span>
-                      Documentation reviewed
-                      <small>{guide.reviewedOn} · View sources</small>
-                    </span>
-                    <ArrowUpRight size={14} />
-                  </button>
-                  <p className="aside-footnote">
-                    A checked step records your progress. Only the checks you
-                    run can tell you about your server.
-                  </p>
-                </aside>
-              </div>
+                )}
+                {activeStep < sourceIndex ? (
+                  <GuideStep
+                    key={`${configKey(config)}-${activeStep}`}
+                    step={pages[activeStep]}
+                    index={
+                      isAutomation ? activeStep - automationStart : activeStep
+                    }
+                    complete={completed.includes(pages[activeStep].id)}
+                    onToggle={() => toggleStep(pages[activeStep].id)}
+                    total={
+                      isAutomation
+                        ? guide.automation!.steps.length
+                        : guide.steps.length
+                    }
+                    reference={
+                      activeStep >= guide.steps.length && !isAutomation
+                    }
+                    automation={isAutomation}
+                    onBack={() =>
+                      activeStep === 0
+                        ? navigate("home")
+                        : selectStep(activeStep - 1)
+                    }
+                    onNext={() =>
+                      selectStep(
+                        isAutomation
+                          ? activeStep + 1 < sourceIndex
+                            ? activeStep + 1
+                            : sourceIndex
+                          : activeStep >= guide.steps.length
+                            ? 0
+                            : activeStep === guide.steps.length - 1
+                              ? guide.steps.length + 1
+                              : activeStep + 1,
+                      )
+                    }
+                  />
+                ) : (
+                  <section className="sources-page">
+                    <span className="eyebrow">BUILT ON PRIMARY SOURCES</span>
+                    <h2>Trust, with a paper trail.</h2>
+                    <p>
+                      These instructions were reviewed against official
+                      documentation on <strong>{guide.reviewedOn}</strong>. They
+                      have not been executed on a live production server by
+                      DeployGuide. Verify package changes and project
+                      requirements before running them.
+                    </p>
+                    <div className="note">
+                      <InfoDot />
+                      <p>
+                        Supported baselines: Ubuntu 24.04 LTS with Nginx;
+                        Windows Server 2022/2025 with IIS; Node.js 24; Laravel
+                        12 with PHP 8.2–8.5. Select the combination supported by
+                        your application. Other operating systems and runtime
+                        combinations are outside this guide.
+                      </p>
+                    </div>
+                    <div className="sources-list">
+                      {guide.sources.map((s) => (
+                        <a
+                          key={s.url}
+                          href={s.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {s.label}
+                          <ExternalLink size={14} />
+                        </a>
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </GuideLayout>
             </>
           )}
           {view === "troubleshoot" && (
@@ -1165,7 +1241,7 @@ export default function DeployGuideApp() {
             </>
           )}
         </main>
-      </div>
+      </DocumentationLayout>
       <PrintGuide guide={guide} />
       <AnimatePresence>
         {wizard && (
@@ -1195,7 +1271,12 @@ export default function DeployGuideApp() {
             {!query.trim() ? (
               <>
                 <span className="small-label">GOOD PLACES TO START</span>
-                {["Nginx", "environment", "HTTPS", "permissions"].map((t) => (
+                {[
+                  "CI/CD",
+                  isWindows(config.os) ? "IIS" : "Nginx",
+                  "HTTPS",
+                  "permissions",
+                ].map((t) => (
                   <button key={t} onClick={() => setQuery(t)}>
                     <Search size={15} />
                     {t}
@@ -1214,9 +1295,17 @@ export default function DeployGuideApp() {
                     <span>
                       <strong>{step.title}</strong>
                       <small>
-                        {stack.name} · {stack.badge} ·{" "}
-                        {isReference ? "Reference" : `Step ${index + 1}`} ·{" "}
-                        {osLabel(targetConfig.os)}
+                        {stack.name} ·{" "}
+                        {isWindows(targetConfig.os) && stack.id === "laravel"
+                          ? "IIS FastCGI"
+                          : stack.badge}{" "}
+                        ·{" "}
+                        {step.id.startsWith("ci-")
+                          ? "CI/CD"
+                          : isReference
+                            ? "Reference"
+                            : `Step ${index + 1}`}{" "}
+                        · {osLabel(targetConfig.os)}
                       </small>
                     </span>
                     <ArrowRight size={15} />
@@ -1238,9 +1327,12 @@ export default function DeployGuideApp() {
       {reset && (
         <Modal title="Reset this checklist?" onClose={() => setReset(false)}>
           <p className="modal-intro">
-            This removes your {progress} completed steps for the current
-            configuration. Your guide and other saved configurations stay
-            available.
+            This removes your{" "}
+            {progress +
+              (guide.automation?.steps.filter((s) => completed.includes(s.id))
+                .length ?? 0)}{" "}
+            marked deployment and CI/CD steps for the current configuration.
+            Your guide and other saved configurations stay available.
           </p>
           <div className="confirm-actions">
             <button
