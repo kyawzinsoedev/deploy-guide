@@ -1,47 +1,40 @@
 # Validation record
 
-QA completed 2026-10-30; technical sources reviewed 2026-10-29. This records website behavior, generated-document checks and a local filesystem simulation. It does not certify a production server or an executed GitHub workflow.
+Final website QA completed 2026-10-31. Apache, database and Laravel upload sources were reviewed on 2026-10-30; earlier PHP branch and CI/CD source review was completed on 2026-10-29. This records website behavior, generated-document checks and a local filesystem simulation. It does not certify a production server or an executed GitHub workflow.
 
 ## Automated checks
 
-- **155 tests passed, zero failures, zero skipped** on this Windows development machine.
-- Next.js 16.4.3 production build, strict TypeScript compilation and static export passed. The site is in `out/`.
-- Generation covers all six application paths, Ubuntu 24.04 and Windows Server 2022/2025, npm/pnpm, www variants and PHP 8.2/8.3/8.4/8.5.
-- Launch paths remain 5 steps for HTML, 6 for Vite/static Next, and 7 for runtime applications. CI/CD has its own optional six-step checklist.
-- Input rejection, platform-specific paths, reserved Windows names, shell quoting, version consistency, Nginx/FPM sockets, IIS XML, WinSW identities, source links and complete Markdown content passed regression checks.
-- Generated Bash and PowerShell blocks were parsed without executing their deployment commands. IIS/WinSW XML and workflow YAML were parsed. Workflow checks cover pinned action SHAs, hosted CI, restricted manual main-branch deployment, private repositories, environment gates, minimal token permissions and serialization.
-- A separate Windows static-release simulation used a disposable directory inside this checkout, real directory junctions and local tar files. HTTP responses were simulated. It confirmed successful activation and restoration of the preceding release after a failed HTTP check, while preserving the bootstrap files. It did not change a service, IIS configuration or any real deployment directory.
-- The final test output is retained locally under ignored `qa/final-test-results.txt`. Test fixtures were cleaned up only after checking their absolute paths remained within the test directory.
+- **164 tests passed, zero failures, zero skipped** on this Windows development machine. Final output: ignored `qa/test-apache.log`.
+- Next.js 16.4.3 production build, strict TypeScript compilation and static export passed. The deployable website is in `out/`.
+- Generation covers all six application paths, Ubuntu 24.04, Windows Server 2022/2025, npm/pnpm, www variants and PHP 8.2/8.3/8.4/8.5.
+- Launch paths contain 5 steps for HTML, 6 for Vite/static Next, 7 for Node applications and 8 for Laravel including its conditional database setup. CI/CD retains its separate six-step checklist.
+- Input validation, shell quoting, reserved Windows paths, PHP branch consistency, Nginx/FPM sockets, WinSW identities, source links and complete Markdown content passed regression checks.
+- Generated Bash and PowerShell blocks were parsed without executing deployment commands. WinSW XML and workflow YAML were parsed. Apache configuration received structural/generation checks, not a real httpd configuration test on a server.
+- Apache regression checks cover initial HTTP without nonexistent certificates, final TLS file paths, public Laravel roots, blocked nested/uploaded PHP paths, private Node proxy targets, forwarded-header handling and ACME access outside application releases.
+- Database checks cover schema/account name lengths, loopback settings, omission of secret values, conditional existing-database guidance and MySQL-only random-password syntax. Windows/Laravel progress keys use a new revision so old checkmarks cannot imply the revised tasks were completed.
+- CI/CD checks cover pinned action SHAs, hosted CI, manual main-branch deployment, trusted private repositories, environment gates, minimal permissions and serialization. Windows releases no longer copy web.config or grant IIS pool permissions; administrator-owned Apache configuration remains outside the release artifact.
+- A disposable Windows static-release simulation used real directory junctions and local tar files with simulated HTTP responses. It confirmed activation and recovery after a failed HTTP check. It did not change services, Apache configuration or real deployment folders. Fixtures were cleaned only within their checked workspace paths.
 
 ## Browser checks
 
-The exported site was served by the included local preview tool. The final build was reloaded after source changes.
+The static export was served locally. The final build was opened again after the last wording and sidebar-label changes.
 
-- Sidebar and typography follow-up: production build/static export and strict TypeScript passed. The expanded sidebar has its collapse control beside search, without an extra navigation heading. Collapsed mode retains clickable, named icons; tested guide-step navigation, search, CI/CD expansion, Enter/Space toggling and preference restoration after refresh. The desktop icon rail is 64px; the mobile menu restores full labels independently. Browser checks covered 1280px desktop, 820px tablet and 390px/320px phones. Main prose computed to 16px, navigation to 14px and code to 13px. Fixed the larger DNS label and narrow-phone tabs to fit their containers. Mobile landing cards and the scrollable configuration wizard were also inspected.
+- Windows Server 2022 + Laravel + PHP 8.4 generated the correct eight-step Apache guide, personalized C:\\Sites path, diagram and download label. The PHP selector displayed all four branches. The previously saved Windows 2025/PHP 8.5 configuration also rendered the new Apache path.
+- Opened Prepare MariaDB and the upload/build task; checked the private database account instructions, production settings and conditional React/Vite build. Required-in-context work is labeled “When needed,” with its applicability explained, instead of an unconditional “Optional” badge.
+- The schema copy button returned the expected personalized SQL. Downloaded `qa-apache.apache.conf` through the browser and inspected the saved file: selected hostname/www alias, public root, challenge path and PHP guard were present.
+- Local search found MariaDB instructions for both Windows versions. Searching Prepare MySQL and opening the result switched to Ubuntu 24.04, PHP-FPM, Nginx configuration download and the correct MySQL task before production configuration.
+- Desktop 1280px and phone 390px checks showed no document-level horizontal overflow. Mobile menu navigation reached the upload task. Existing architecture/sidebar collapse behavior remained available. No browser console errors appeared in the final check.
+- Screenshot proof is retained locally at `qa/apache-mariadb-guide.png`.
 
-- Architecture-panel follow-up: rebuilt the static export with strict TypeScript checks. Verified desktop collapse reduces the panel to a 44px rail and expands the instructions, Enter/Space reopening and closing retain focus, hidden content is inert, and the saved choice survives refresh and step navigation. Checked open/closed mobile behavior at 390px and collapsed tablet/wide-desktop layouts at 820px/1536px without horizontal overflow. No browser console errors appeared. Reduced-motion behavior uses the existing global CSS override; an operating-system preference change was not tested.
+Earlier UI checks in this project covered sidebar icon navigation, search, keyboard Enter/Space collapse controls, architecture collapse, preference restoration, all four themes, step/checklist persistence, reset confirmation, CI/CD downloads, and phone/tablet/desktop widths. These features were preserved; this follow-up focused on the changed Windows/Ubuntu documentation and configuration outputs. Print content includes launch tasks, references, CI/CD and sources; a physical/PDF print job was not executed.
 
-- Selected Windows Server 2025 + Laravel + PHP 8.5 through the wizard. All four PHP options were visible, with compatibility/support guidance. The review correctly showed `C:\Sites\qa-guide`, Windows Server, PHP 8.5 and IIS FastCGI.
-- Rejected a domain containing a shell separator. Changing the application name updated the default Windows directory. The seven-step Windows guide, IIS request diagram, version labels and configuration-download label matched the selection.
-- Opened the optional CI/CD section, navigated its steps, used keyboard arrow navigation between tabs, copied the workflow and checked clipboard content.
-- Browser downloads were confirmed on disk: `deployguide.yml` and `deploy.ps1`. The downloaded workflow contained Windows Server 2025, PHP 8.5, the chosen application label and production restrictions. Other guide/configuration contents are covered by generator tests.
-- Marked a CI/CD step complete and reloaded. The selected step and checkmark were restored, independently of the launch checklist. Both cancel-reset and confirmed reset were exercised; the confirmation counted CI/CD progress correctly.
-- Local CI/CD search returned results across all six stacks and all three OS choices. Current-OS results appeared first, and selecting the Windows Laravel result preserved the platform and PHP version.
-- Inspected Paper Light, Midnight Blue and Forest Terminal visually, and verified Warm Sand selection. The four themes were also visually checked in the initial project build.
-- Checked 390x844 mobile, 820x1180 tablet and 1280x900 desktop widths without document-level horizontal overflow. Fixed hidden mobile navigation remaining keyboard-accessible and verified its closed state uses `visibility: hidden`. Removed duplicate prerequisite text from the commands view. Corrected nested CI/CD sidebar buttons to share the regular navigation styling.
-- Print content includes launch tasks, references, the optional CI/CD guide and sources. A physical/PDF print job was not executed.
+## Technical sources and limits
 
-## Technical source review
+Primary Apache, PHP, MariaDB, MySQL/Ubuntu, HeidiSQL, Laravel and win-acme documentation informed the replacement Windows path and database/upload instructions. Source links are shipped in each guide. PHP version choices and GitHub Actions references retain their documented review dates and compatibility caveats.
 
-Primary documentation was consulted for Microsoft IIS/FastCGI/ARR, PHP Windows installation and supported branches, Laravel 12, GitHub Actions environments/runners/security, the pinned actions, PHP cache behavior and Windows service access rights. Links are shipped inside generated guides. The reviewed action release commits were read from their official GitHub repositories.
+**No live Ubuntu or Windows Server deployment was executed.** Apache/PHP integration, database installation, native service permissions, real application builds, certificate issuance/renewal, provider networking, PHP cache behavior under junction releases and live rollback must be rehearsed on a matching staging server before production. Website tests and shell parsing cannot prove those behaviors.
 
-Ubuntu 24.04 defaults to PHP 8.3. Availability of the alternate PHP 8.2, 8.4 and 8.5 FPM packages was checked against the third-party PPA's Noble amd64 package index. The guide discloses that additional repository trust; this is an availability check, not an installation test. PHP 8.2's approaching support end is shown in the builder.
+The baseline uses one Apache installation and one PHP version on Windows, with a dedicated non-administrator web account. Multi-tenant isolation, Inertia SSR, Reverb and native Windows production queue workers are outside this baseline. CI/CD requires trusted private single-package repositories, appropriate environment access, a restricted runner and project-specific health checks. Code rollback does not reverse database changes. No zero-downtime or automatic server-verification claim is made.
 
-## Limits and operating scope
-
-No commands were run on a live Ubuntu or Windows Server, and no GitHub workflow, runner or repository was created or activated. Native service privileges, web-worker PHP cache behavior, real application builds, certificate issuance, provider networking and live rollback require the documented staging rehearsal. Syntax tests and the local static-file simulation cannot prove those behaviors.
-
-CI/CD targets trusted private, single-package GitHub repositories and requires an eligible private-environment plan. The production runner must be a restricted deployment account; labels alone do not secure it. Laravel migrations, background workers/scheduling, optional public upload links and application-specific health tests require explicit project review. Code rollback never implies database recovery. No zero-downtime or automatic server-verification claim is made.
-
-The user's **Keep it local** preference remains in effect. No source upload or publication was performed. Local source and static-export archives are provided.
+The user's **Keep it local** preference remains in effect. Nothing was uploaded or published. Source and static-export archives are supplied locally.
 

@@ -2,7 +2,7 @@ import type { CodeBlock, Guide, Step } from "./types";
 import { runtimeLabel, osLabel } from "@/content/platforms";
 
 function blockMarkdown(block: CodeBlock): string {
-  return `#### ${block.title}\n\n${block.optional ? `**Optional:** ${block.optional}\n\n` : ""}Run in: ${block.location}. ${block.changes ? "Changes files or server state." : "Read-only / educational."}\n\n\`\`\`${block.language}\n${block.code}\n\`\`\`\n`;
+  return `#### ${block.title}\n\n${block.optional ? `**When needed:** ${block.optional}\n\n` : ""}Run in: ${block.location}. ${block.changes ? "Changes files or server state." : "Read-only / educational."}\n\n\`\`\`${block.language}\n${block.code}\n\`\`\`\n`;
 }
 
 function taskMarkdown(step: Step): string {

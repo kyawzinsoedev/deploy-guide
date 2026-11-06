@@ -647,7 +647,8 @@ export default function DeployGuideApp() {
               </div>
               <div className="sidebar-version">
                 <span>
-                  <span className="live-dot" /> Ubuntu
+                  <span className="live-dot" />{" "}
+                  {isWindows(config.os) ? "Windows Server" : "Ubuntu"}
                 </span>
                 <span>v1.0</span>
               </div>
@@ -844,7 +845,7 @@ export default function DeployGuideApp() {
                     {
                       n: "GO LIVE",
                       title: "Open the front door",
-                      text: "Nginx or IIS, DNS, HTTPS, verification—and optional CI/CD when you're ready.",
+                      text: "Nginx or Apache, DNS, HTTPS, verification—and optional CI/CD when you're ready.",
                     },
                   ].map((item) => (
                     <div key={item.n}>
@@ -936,17 +937,17 @@ export default function DeployGuideApp() {
                     onClick={() => {
                       downloadText(
                         isWindows(config.os)
-                          ? `${config.appName}.web.config`
+                          ? `${config.appName}.apache.conf`
                           : `${config.appName}.nginx.conf`,
-                        guide.webConfig ?? guide.nginx,
+                        guide.apache ?? guide.nginx,
                       );
                       setNotice(
-                        `${isWindows(config.os) ? "IIS web.config" : "Initial HTTP Nginx configuration"} download started.`,
+                        `${isWindows(config.os) ? "Apache config" : "Initial HTTP Nginx configuration"} download started.`,
                       );
                     }}
                   >
                     <FileCode2 size={14} />
-                    {isWindows(config.os) ? "IIS web.config" : "Nginx config"}
+                    {isWindows(config.os) ? "Apache config" : "Nginx config"}
                   </button>
                   <button onClick={() => window.print()}>
                     <Printer size={14} />
@@ -982,7 +983,8 @@ export default function DeployGuideApp() {
                         <div>
                           <dt>Public entry</dt>
                           <dd>
-                            {isWindows(config.os) ? "IIS" : "Nginx"} · 80 / 443
+                            {isWindows(config.os) ? "Apache" : "Nginx"} · 80 /
+                            443
                           </dd>
                         </div>
                         {guide.stack.mode === "node" && (
@@ -1089,10 +1091,10 @@ export default function DeployGuideApp() {
                       <InfoDot />
                       <p>
                         Supported baselines: Ubuntu 24.04 LTS with Nginx;
-                        Windows Server 2022/2025 with IIS; Node.js 24; Laravel
-                        12 with PHP 8.2–8.5. Select the combination supported by
-                        your application. Other operating systems and runtime
-                        combinations are outside this guide.
+                        Windows Server 2022/2025 with Apache; Node.js 24;
+                        Laravel 12 with PHP 8.2–8.5. Select the combination
+                        supported by your application. Other operating systems
+                        and runtime combinations are outside this guide.
                       </p>
                     </div>
                     <div className="sources-list">
@@ -1273,7 +1275,7 @@ export default function DeployGuideApp() {
                 <span className="small-label">GOOD PLACES TO START</span>
                 {[
                   "CI/CD",
-                  isWindows(config.os) ? "IIS" : "Nginx",
+                  isWindows(config.os) ? "Apache" : "Nginx",
                   "HTTPS",
                   "permissions",
                 ].map((t) => (
@@ -1297,7 +1299,7 @@ export default function DeployGuideApp() {
                       <small>
                         {stack.name} ·{" "}
                         {isWindows(targetConfig.os) && stack.id === "laravel"
-                          ? "IIS FastCGI"
+                          ? "Apache + PHP"
                           : stack.badge}{" "}
                         ·{" "}
                         {step.id.startsWith("ci-")

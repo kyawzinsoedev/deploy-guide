@@ -1,3 +1,4 @@
+import { apacheAccount } from "@/lib/apache";
 import type { CodeBlock, GuideConfig, Source, Step } from "@/lib/types";
 import { isWindows, osLabel } from "./platforms";
 import {
@@ -99,10 +100,10 @@ sudo usermod -aG www-data ${q(c.username)}
 $base = ${pq(base)}
 if (Test-Path -LiteralPath $base) { throw 'Release directory already exists; inspect it first' }
 New-Item -ItemType Directory -Path $base | Out-Null
-icacls.exe $base /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)(F)' '*S-1-5-32-544:(OI)(CI)(F)' ${pq(c.username + ":(OI)(CI)(M)")} ${pq((node ? "*S-1-5-19" : "IIS AppPool\\" + c.appName) + ":(OI)(CI)(RX)")}
+icacls.exe $base /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)(F)' '*S-1-5-32-544:(OI)(CI)(F)' ${pq(c.username + ":(OI)(CI)(M)")} ${pq((node ? "*S-1-5-19" : apacheAccount) + ":(OI)(CI)(RX)")}
 if ($LASTEXITCODE -ne 0) { throw 'ACL setup failed' }
 New-Item -ItemType Directory -Path "$base\\releases", "$base\\shared", "$base\\control" | Out-Null
-${php ? "# shared\\storage will later receive pool Modify permission; other files stay read-only to PHP.\n" : ""}# Sign in as the deployment user for the seed-copy task.
+${php ? "# shared\\storage will later receive Apache Modify permission; other files stay read-only to PHP.\n" : ""}# Sign in as the deployment user for the seed-copy task.
 `;
 }
 function seedRelease(c: GuideConfig): string {
@@ -176,9 +177,9 @@ ${
 Move-Item -LiteralPath "$seed\\storage" -Destination "$base\\shared\\storage"
 New-Item -ItemType HardLink -Path "$seed\\.env" -Target "$base\\shared\\.env" | Out-Null
 New-Item -ItemType Junction -Path "$seed\\storage" -Target "$base\\shared\\storage" | Out-Null
-icacls.exe "$base\\shared\\storage" /grant ${pq("IIS AppPool\\" + c.appName + ":(OI)(CI)(M)")}
+icacls.exe "$base\\shared\\storage" /grant ${pq(apacheAccount + ":(OI)(CI)(M)")}
 if ($LASTEXITCODE -ne 0) { throw 'Storage ACL failed' }
-icacls.exe "$seed\\bootstrap\\cache" /grant ${pq("IIS AppPool\\" + c.appName + ":(OI)(CI)(M)")}
+icacls.exe "$seed\\bootstrap\\cache" /grant ${pq(apacheAccount + ":(OI)(CI)(M)")}
 if ($LASTEXITCODE -ne 0) { throw 'Cache ACL failed' }
 Push-Location -LiteralPath $seed
 try {
@@ -189,14 +190,9 @@ try {
 } finally { Pop-Location }
 `
     : ""
-}${
-    !node
-      ? `Copy-Item -LiteralPath "$seed\\${output}\\web.config" -Destination "$base\\shared\\web.config"
-`
-      : ""
-  }New-Item -ItemType Junction -Path "$base\\current" -Target $seed | Out-Null
+}New-Item -ItemType Junction -Path "$base\\current" -Target $seed | Out-Null
 Get-Item -LiteralPath "$base\\current" | Select-Object FullName, LinkType, Target
-# The live IIS site/service still uses the original project until the next task.
+# The live Apache site/service still uses the original project until the next task.
 `;
 }
 function servicePermission(c: GuideConfig): string {
@@ -438,8 +434,8 @@ export function generateAutomation(c: GuideConfig) {
           "Update these existing settings",
           win
             ? node
-              ? `Back up C:\\Services\\${c.appName}\\${c.appName}.xml. Stop only the ${c.appName} service.\nSet its workingdirectory to ${current}.\n${c.stack === "next-node" ? "In arguments, change the Next CLI path to " + current + "\\node_modules\\next\\dist\\bin\\next.\n" : ""}Keep the existing protected app.env and LocalService identity.\nKeep IIS's wwwroot/web.config and HTTPS bindings unchanged.\nStart the service and verify local and public responses.\nEnsure only Administrators/SYSTEM can modify the wrapper and XML.`
-              : `Back up IIS configuration and the site's web.config.\nIn IIS Manager → ${c.appName} → Basic Settings, change Physical path to ${current}\\${outputFolder(c)}.\nKeep the existing pool, anonymous Application pool identity and HTTPS bindings.\nThe shared\\web.config copy includes your existing routing and HTTPS redirect rules.\n${php ? "In the selected PHP php.ini, review and set realpath_cache_size=0, opcache.validate_timestamps=1, opcache.revalidate_freq=0 and opcache.revalidate_path=1. Recycle only this app pool once as administrator. Verify the actual CGI settings locally, then remove any diagnostic page; never publish phpinfo. These settings trade extra filesystem checks for correct junction changes.\n" : ""}Test routes, assets and HTTPS before continuing.`
+              ? `Back up C:\\Services\\${c.appName}\\${c.appName}.xml. Stop only the ${c.appName} service.\nSet its workingdirectory to ${current}.\n${c.stack === "next-node" ? "In arguments, change the Next CLI path to " + current + "\\node_modules\\next\\dist\\bin\\next.\n" : ""}Keep the existing protected app.env and LocalService identity.\nKeep the existing Apache reverse proxy, certificate paths and HTTPS settings unchanged.\nStart the service and verify local and public responses.\nEnsure only Administrators/SYSTEM can modify the wrapper and XML.`
+              : `Back up the active HTTPS-enabled Apache site configuration.\nChange DocumentRoot and its matching Directory path to ${current.replaceAll("\\", "/")}/${outputFolder(c)}. Preserve all other rules, certificate paths and the stable ACME Alias directory.\nKeep FollowSymLinks enabled for the release junction. No web-server configuration belongs in the uploaded release.\n${php ? "In the selected PHP php.ini, review realpath_cache_size=0, opcache.validate_timestamps=1, opcache.revalidate_freq=0 and opcache.revalidate_path=1. These settings trade extra file checks for correct junction changes. Verify actual web-module settings in a private, local diagnostic and remove it; never publish phpinfo.\n" : ""}Run C:\\Apache24\\bin\\httpd.exe -t; stop on failure. Then restart Apache2.4 as administrator during a maintenance window. Test routes, assets and HTTPS before continuing.`
             : node
               ? `Back up /etc/systemd/system/${c.appName}.service.\nSet WorkingDirectory=${current}.\n${c.stack === "next-node" ? "Update ExecStart's Next CLI path to " + current + "/node_modules/next/dist/bin/next.\n" : ""}Keep User=${c.username} and the existing EnvironmentFile.\nRun sudo systemctl daemon-reload, then sudo systemctl restart ${c.appName}.service.\nVerify loopback and public responses. Keep the unit root-owned.`
               : `Back up the active HTTPS-enabled Nginx site configuration.\nChange only its root to ${current}/${outputFolder(c)}. Preserve certificates and redirects.\nRun sudo nginx -t. Reload Nginx only if that test passes.\n${php ? "Keep SCRIPT_FILENAME using $realpath_root. Review PHP FPM realpath/OPcache settings for symlink releases: realpath_cache_size=0, opcache.validate_timestamps=1, opcache.revalidate_freq=0, opcache.revalidate_path=1. Reload the selected PHP FPM service once as administrator. Verify web-worker settings locally, not just CLI php -i.\n" : ""}Test the bootstrap release at https://${c.domain}/.`,
@@ -498,7 +494,7 @@ touch ${q(base + "/control/ready")}`,
           term: "Scoped privileges",
           explanation: node
             ? "The runner may restart only this service. It cannot edit the root/administrator-owned service definition. Never add it to Administrators or give it unrestricted sudo."
-            : "The runner changes application files; it receives no Nginx, IIS or PHP service administration rights.",
+            : "The runner changes application files; it receives no Nginx, Apache or PHP service administration rights.",
         },
       ],
       expected:
@@ -613,7 +609,7 @@ touch ${q(base + "/control/ready")}`,
       blocks: [
         block(
           "Release checklist",
-          `1. Confirm the intended commit is on reviewed main and checks are meaningful.\n2. Rehearse the same release and a failure recovery on a separate staging server.\n3. In GitHub Actions, run Checks and release on main. Review/approve the production environment if configured.\n4. Watch the check job, artifact transfer, dependency installation and HTTP check.\n5. At https://${c.domain}, test the important routes, assets and app-specific read/write flows.\n6. Inspect ${win ? "IIS and application/Event Viewer logs" : "Nginx and application/service logs"}; confirm no new errors.\n7. Keep earlier releases until recovery confidence and backup retention permit cleanup. Monitor disk space.`,
+          `1. Confirm the intended commit is on reviewed main and checks are meaningful.\n2. Rehearse the same release and a failure recovery on a separate staging server.\n3. In GitHub Actions, run Checks and release on main. Review/approve the production environment if configured.\n4. Watch the check job, artifact transfer, dependency installation and HTTP check.\n5. At https://${c.domain}, test the important routes, assets and app-specific read/write flows.\n6. Inspect ${win ? "Apache and application/Event Viewer logs" : "Nginx and application/service logs"}; confirm no new errors.\n7. Keep earlier releases until recovery confidence and backup retention permit cleanup. Monitor disk space.`,
           "text",
           "Configuration",
           true,
@@ -621,7 +617,7 @@ touch ${q(base + "/control/ready")}`,
         block(
           "Recovery during a maintenance window",
           win
-            ? `1. Pause new releases; inspect ${base}\\control\\previous.txt and the retained releases.\n2. ${node ? "Stop only the " + c.appName + " service using the delegated account." : php ? "Run the selected PHP CLI with current\\artisan down." : "Expect a brief gap while the junction changes."}\n3. Verify current is a Junction and the intended previous target is a retained directory inside ${base}\\releases.\n4. Remove only that junction with [IO.Directory]::Delete(currentPath, $false), never recursively delete the target. Create the current junction to the inspected previous release.\n5. ${node ? "Start the service." : php ? "Run the selected PHP CLI with current\\artisan up." : "Let IIS serve the restored files."}\n6. Verify public responses and application behavior. If junction creation fails, use the original project's known-good IIS/service configuration after administrator review.\n7. A code rollback cannot reverse schema/data changes. Restore data only through a separately rehearsed database procedure.`
+            ? `1. Pause new releases; inspect ${base}\\control\\previous.txt and the retained releases.\n2. ${node ? "Stop only the " + c.appName + " service using the delegated account." : php ? "Run the selected PHP CLI with current\\artisan down." : "Expect a brief gap while the junction changes."}\n3. Verify current is a Junction and the intended previous target is a retained directory inside ${base}\\releases.\n4. Remove only that junction with [IO.Directory]::Delete(currentPath, $false), never recursively delete the target. Create the current junction to the inspected previous release.\n5. ${node ? "Start the service." : php ? "Run the selected PHP CLI with current\\artisan up." : "Let Apache serve the restored files."}\n6. Verify public responses and application behavior. If junction creation fails, use the original project's known-good Apache/service configuration after administrator review.\n7. A code rollback cannot reverse schema/data changes. Restore data only through a separately rehearsed database procedure.`
             : `1. Pause new releases. Inspect ${base}/control/previous.txt and retained releases.\n2. Verify the target is a known directory under ${base}/releases.\n3. During maintenance, create a new temporary symlink to that target beside current, then atomically replace current with mv -Tf. Never delete the release directory.\n4. ${node ? "Restart only " + c.appName + ".service using the scoped rule." : php ? "Use the selected PHP CLI with current/artisan down before switching and current/artisan up afterward." : "Nginx follows the restored current link; it needs no config reload."}\n5. Check public HTTP, important app workflows and logs. Keep the original project/configuration as another recovery option.\n6. Code rollback does not reverse a migration or restore a database.`,
           "text",
           "Server · deployment user",

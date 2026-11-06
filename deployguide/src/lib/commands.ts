@@ -8,7 +8,7 @@ export function generateNginx(c: GuideConfig): string {
   assertValid(c);
   if (isWindows(c.os))
     throw new Error(
-      "Windows Server uses IIS web.config, not this Nginx configuration.",
+      "Windows Server uses Apache config, not this Nginx configuration.",
     );
   const s = stacks.find((s) => s.id === c.stack)!;
   const root =

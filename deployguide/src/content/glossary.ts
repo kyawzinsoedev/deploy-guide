@@ -1,5 +1,20 @@
 export const glossary = [
   {
+    term: "Apache",
+    definition:
+      "The Windows guide’s web server. It serves public files, handles HTTPS, proxies Node requests and can load PHP as a module.",
+  },
+  {
+    term: "MariaDB / MySQL",
+    definition:
+      "Database servers that store application data. Laravel uses a private account limited to its own database; a database client such as HeidiSQL is only a tool for managing that server.",
+  },
+  {
+    term: "Inertia",
+    definition:
+      "Connects React pages to Laravel routes and controllers in one application. Vite builds the browser assets; Laravel remains the backend.",
+  },
+  {
     term: "DNS",
     definition:
       "The internet’s address book. DNS translates a name such as example.com into the IP address of your server.",

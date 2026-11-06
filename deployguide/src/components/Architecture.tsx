@@ -36,11 +36,11 @@ export function Architecture({
     ? {
         ...details,
         nginx:
-          "IIS receives public traffic on ports 80 and 443, handles HTTPS, and selects a site using its host binding.",
+          "Apache receives public traffic on ports 80 and 443, handles HTTPS, and selects a site using its host binding.",
         output:
-          "IIS serves the public HTML, CSS and JavaScript files directly.",
-        node: "IIS ARR proxies to the Node service on loopback. Windows Service Control Manager keeps the process running.",
-        php: "IIS FastCGI runs the selected php-cgi.exe. Laravel’s public directory is the document root.",
+          "Apache serves the public HTML, CSS and JavaScript files directly.",
+        node: "Apache proxies to the Node service on loopback. Windows Service Control Manager keeps the process running.",
+        php: "Apache loads the selected Thread Safe PHP module. Laravel’s public directory is the document root.",
       }
     : details;
   const end = mode === "node" ? "node" : mode === "php" ? "php" : "output";
@@ -81,9 +81,9 @@ export function Architecture({
             className={`diagram-node nginx-node ${active === "nginx" ? "selected" : ""}`}
             onClick={() => setActive("nginx")}
           >
-            <span className="nginx-symbol">{windows ? "I" : "N"}</span>
+            <span className="nginx-symbol">{windows ? "A" : "N"}</span>
             <span>
-              {windows ? "IIS" : "Nginx"}
+              {windows ? "Apache" : "Nginx"}
               <small>Your front door to the web</small>
             </span>
             <span className="port-label">80 / 443</span>
@@ -96,7 +96,7 @@ export function Architecture({
                 : mode === "node"
                   ? "forwards to a private port"
                   : windows
-                    ? "runs PHP through FastCGI"
+                    ? "runs PHP as a module"
                     : "passes PHP to a local socket"}
             </small>
           </div>
@@ -115,7 +115,7 @@ export function Architecture({
                 : mode === "node"
                   ? "Node.js application"
                   : windows
-                    ? "Laravel + FastCGI"
+                    ? "Laravel + PHP"
                     : "Laravel + PHP-FPM"}
               <small>
                 {mode === "static"

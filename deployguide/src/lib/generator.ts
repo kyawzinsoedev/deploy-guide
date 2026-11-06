@@ -12,7 +12,10 @@ export function generateGuide(c: GuideConfig): Guide {
   return {
     ...guide,
     automation: generateAutomation(c),
-    reviewedOn: "2026-10-29",
+    reviewedOn:
+      isWindows(c.os) || c.stack === "laravel"
+        ? "2026-10-30"
+        : guide.reviewedOn,
     sources: [...guide.sources, ...automationSources],
   };
 }

@@ -1,3 +1,4 @@
+import { laravelEnvironment } from "./databases";
 import { commonSources, reviewedOn, stacks } from "./stacks";
 import { troubleshooting } from "./troubleshooting";
 import type { CodeBlock, Guide, GuideConfig, Step } from "@/lib/types";
@@ -296,7 +297,7 @@ export function generateGuide(c: GuideConfig): Guide {
       )
     : block(
         "Upload from your project directory",
-        `# Run in your local ${c.stack === "html" ? "public-only website directory" : "project root"}. Review what will be uploaded.\nrsync -av --dry-run --exclude '.git' ${php ? "--include '.env.example' " : ""}--exclude '.env*' --exclude 'node_modules' --exclude '.next' ./ ${q(`${c.username}@${c.serverIp}:${c.stack === "html" ? root : c.directory}/`)}\n# After reviewing the dry run, upload (without deleting remote files).\nrsync -av --exclude '.git' ${php ? "--include '.env.example' " : ""}--exclude '.env*' --exclude 'node_modules' --exclude '.next' ./ ${q(`${c.username}@${c.serverIp}:${c.stack === "html" ? root : c.directory}/`)}`,
+        `# Run in your local ${c.stack === "html" ? "public-only website directory" : "project root"}. Review what will be uploaded.\nrsync -av --dry-run --exclude '.git' ${php ? "--include '.env.example' " : ""}--exclude '.env*' --exclude 'node_modules' --exclude 'vendor' --exclude 'public/hot' --exclude '.next' ./ ${q(`${c.username}@${c.serverIp}:${c.stack === "html" ? root : c.directory}/`)}\n# After reviewing the dry run, upload (without deleting remote files).\nrsync -av --exclude '.git' ${php ? "--include '.env.example' " : ""}--exclude '.env*' --exclude 'node_modules' --exclude 'vendor' --exclude 'public/hot' --exclude '.next' ./ ${q(`${c.username}@${c.serverIp}:${c.stack === "html" ? root : c.directory}/`)}`,
         "Your computer",
       );
   steps.push({
@@ -318,6 +319,17 @@ export function generateGuide(c: GuideConfig): Guide {
           ]
         : []),
       upload,
+      ...(php && !c.repository
+        ? [
+            block(
+              "ZIP / WinSCP alternative",
+              `Instead of rsync, extract the reviewed ZIP on your computer. In WinSCP choose SFTP, host ${c.serverIp}, user ${c.username}, and your approved SSH authentication. Verify the server host key.\nOpen ${c.directory} on the server. Preview/synchronize the contents of the actual project root, not its wrapper folder. Exclude .env, .env.*, .git, node_modules and vendor. Copy only the non-secret .env.example separately if absent. Disable deletion of remote files.\nKeep composer.lock and the frontend lockfile. Do not also run the rsync transfer for the same release.`,
+              "Your computer",
+              true,
+              "text",
+            ),
+          ]
+        : []),
     ],
     breakdown: [
       {
@@ -347,7 +359,7 @@ export function generateGuide(c: GuideConfig): Guide {
     how: node
       ? "systemd reads a root-owned environment file and passes values to the process at startup. It is not a shell script: use KEY=value lines without export."
       : php
-        ? "Laravel reads a .env file outside public. PHP-FPM needs read access, but visitors must never be able to download it."
+        ? "Laravel reads .env above public. PHP-FPM needs read access; visitors must never download it. Laravel React/Inertia is one app: Nginx serves public and compiled public/build assets. Do not deploy it as a separate React SPA. SSR/Reverb need additional services outside this baseline."
         : "Static output cannot keep a secret. VITE_ and NEXT_PUBLIC_ values are embedded during the build and can be read by visitors.",
     before: `${node ? "Administrator shell; any directory" : `Deployment-user shell; ${c.directory}`}. Prepare only the settings your app actually requires. No passwords, tokens or secret values should be entered into this website.`,
     blocks: node
@@ -373,7 +385,7 @@ export function generateGuide(c: GuideConfig): Guide {
             ),
             block(
               "Set these non-secret values",
-              `APP_ENV=production\nAPP_DEBUG=false\nAPP_URL=https://${c.domain}`,
+              laravelEnvironment(c),
               "Configuration",
               true,
               "ini",
@@ -421,7 +433,7 @@ export function generateGuide(c: GuideConfig): Guide {
     note: node
       ? "Next.js also needs build-time values before next build. NEXT_PUBLIC_ values are fixed into the bundle; systemd’s runtime file does not supply build-time variables. Provide documented non-secret build values in your build environment."
       : php
-        ? "Set the database, session, cache and queue drivers your project actually uses. The guide does not provision a database. Configure and test an existing database before running migrations."
+        ? "Use the private database account from Prepare MySQL, or your existing database details if you skipped that setup. Enter DB_PASSWORD only on the server. Keep session/cache/queue drivers consistent with their tables and workers. Never use the database root account."
         : undefined,
   });
   let buildBlocks: CodeBlock[];
@@ -444,8 +456,8 @@ export function generateGuide(c: GuideConfig): Guide {
         `cd ${d}\n# Continue only after APP_KEY and required database settings are configured.\nphp${c.runtime} artisan config:cache\nphp${c.runtime} artisan view:cache`,
       ),
       block(
-        "If your Laravel app uses Vite assets",
-        `# On your own computer, from the project root:\n${install}\n${build}\nrsync -av public/build/ ${q(`${c.username}@${c.serverIp}:${c.directory}/public/build/`)}`,
+        "Build Laravel React / Vite assets",
+        `# Locally, in the tested project root with its PHP/Composer dependencies and required Node version:\n${install}\n${build}\ntest -f public/build/manifest.json\nrsync -av --dry-run public/build/ ${q(`${c.username}@${c.serverIp}:${c.directory}/public/build/`)}\n# Review the preview, then copy:\nrsync -av public/build/ ${q(`${c.username}@${c.serverIp}:${c.directory}/public/build/`)}`,
         "Your computer",
       ),
     ];

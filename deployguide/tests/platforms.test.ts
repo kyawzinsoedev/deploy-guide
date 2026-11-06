@@ -32,15 +32,17 @@ for (const os of serverOptions)
       assert.deepEqual(validateConfig(c), {});
       const g = generateGuide(c),
         md = toMarkdown(g);
-      assert.equal(g.steps.length, 7);
+      assert.equal(g.steps.length, 8);
       assert.ok(md.includes(osLabel(c.os)));
       assert.ok(md.includes(`PHP ${version.id}`));
       assert.ok(!/undefined|\$\{c\.|TODO|YOUR_SERVER/.test(md));
       if (isWindows(c.os)) {
-        assert.ok(g.webConfig!.includes(`C:\\PHP\\${version.id}\\php-cgi.exe`));
+        assert.ok(md.includes(`C:/PHP/${version.id}/php8apache2_4.dll`));
+        assert.ok(md.includes("Thread Safe"));
+        assert.ok(g.apache!.includes("SetHandler application/x-httpd-php"));
         assert.ok(md.includes(`C:\\PHP\\${version.id}\\php.exe`));
         assert.ok(!md.includes("sudo "));
-        assert.ok(!g.webConfig!.includes("php-fpm"));
+        assert.ok(!g.apache!.includes("php-fpm"));
         assert.ok(md.includes("PCNTL"));
       } else {
         assert.ok(g.nginx.includes(`php${version.id}-fpm.sock`));
@@ -73,11 +75,17 @@ for (const os of ["windows-2022", "windows-2025"] as const)
             md = toMarkdown(g);
           assert.equal(
             g.steps.length,
-            stack.id === "html" ? 5 : stack.mode === "static" ? 6 : 7,
+            stack.id === "html"
+              ? 5
+              : stack.mode === "static"
+                ? 6
+                : stack.id === "laravel"
+                  ? 8
+                  : 7,
           );
           assert.equal(g.nginx, "");
           assert.throws(() => generateNginx(c));
-          assert.ok(g.webConfig?.includes("<configuration>"));
+          assert.ok(g.apache?.includes("<VirtualHost *:80>"));
           assert.ok(!/undefined|\$\{c\.|TODO|YOUR_DOMAIN|YOUR_SERVER/.test(md));
           for (const s of [...g.steps, ...(g.references ?? [])]) {
             for (const f of [
@@ -100,18 +108,15 @@ for (const os of ["windows-2022", "windows-2025"] as const)
             md.indexOf("DNS records to configure") <
               md.indexOf("Run the certificate client"),
           );
-          assert.equal(
-            md.includes(
-              "New-WebBinding -Name 'my-app' -Protocol http -Port 80 -HostHeader 'www.example.com'",
-            ),
-            www,
-          );
-          assert.ok(md.includes("Application pool identity"));
+          assert.equal(md.includes("ServerAlias www.example.com"), www);
+          assert.ok(md.includes("dg-httpd"));
+          assert.ok(!md.includes("New-Website"));
+          assert.ok(!md.includes("WebAdministration"));
           if (stack.mode === "node") {
             const xml = generateWindowsService(c);
             assert.ok(xml.includes("<user>LocalService</user>"));
             assert.ok(!xml.includes("LocalSystem"));
-            assert.ok(g.webConfig!.includes("http://127.0.0.1:3000/"));
+            assert.ok(g.apache!.includes("http://127.0.0.1:3000/"));
           } else if (stack.mode === "static") {
             assert.ok(
               !g.steps.some(

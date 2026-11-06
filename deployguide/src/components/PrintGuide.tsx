@@ -28,7 +28,7 @@ function Task({ step }: { step: Step }) {
           </h4>
           {b.optional && (
             <p>
-              <strong>Optional:</strong> {b.optional}
+              <strong>When needed:</strong> {b.optional}
             </p>
           )}
           <p>{b.changes ? "Changes state" : "Read-only / educational"}</p>

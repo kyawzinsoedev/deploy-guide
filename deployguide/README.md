@@ -47,7 +47,7 @@ The wizard asks for app name, domain, and IP up front; username, directory, repo
 | Next.js Node application | Nginx reverse-proxies `next start`            | Node 24, managed by systemd     |
 | Laravel 12               | Nginx serves `public/` and delegates PHP      | PHP 8.2, 8.3, 8.4 or 8.5 FPM    |
 
-The Linux baseline is **Ubuntu 24.04 LTS**. **Windows Server 2022 and 2025, x64 Desktop Experience** have separate native IIS guides for all six paths. IIS serves static files, uses URL Rewrite/ARR for Node, and FastCGI with the selected x64 NTS PHP build for Laravel. Node uses one WinSW Windows service under LocalService. PHP-FPM and systemd commands are never used as Windows instructions. Native Windows production queue workers/Horizon are outside this guide because PHP lacks PCNTL timeout support.
+The Linux baseline is **Ubuntu 24.04 LTS**. **Windows Server 2022 and 2025, x64 Desktop Experience** have separate Apache 2.4 guides for all six paths. Apache serves static files, reverse-proxies Node, and loads the selected x64 Thread Safe (TS) PHP module for Laravel. Apache runs under the dedicated non-administrator `dg-httpd` account. One Apache instance uses one PHP version; multi-tenant isolation is outside this baseline. Node uses one WinSW Windows service under LocalService. PHP-FPM and systemd commands are never used as Windows instructions. Native Windows production queue workers/Horizon are outside this guide because PHP lacks PCNTL timeout support.
 
 PHP **8.3** remains the Ubuntu default because it comes from Ubuntu 24.04's distribution repositories. **8.2, 8.4 and 8.5** use the explicitly disclosed third-party Ondřej Surý PPA. Package availability was checked against its Noble amd64 index. The selected version changes package names, CLI calls, FPM services, sockets and optional workers. PHP 8.5 is the latest stable branch reviewed; PHP 8.2 upstream security support ends 2026-12-31. Composer dependencies and extensions must independently support the selected version. No runtime API resolves “latest.”
 
@@ -55,7 +55,7 @@ Windows, PHP choices and CI/CD sources were reviewed on **2026-10-29**. Instruct
 
 ## Optional CI/CD automation
 
-Each generated guide includes a separate **six-step GitHub Actions CI/CD section**, with its own locally saved checkmarks. It does not lengthen the 5–7-step first deployment. Search, print and Markdown include it; downloadable `deployguide.yml` and `deploy.sh` or `deploy.ps1` use the selected stack, OS, PHP version, package manager and application paths.
+Each generated guide includes a separate **six-step GitHub Actions CI/CD section**, with its own locally saved checkmarks. It does not lengthen the 5–8-step first deployment. Search, print and Markdown include it; downloadable `deployguide.yml` and `deploy.sh` or `deploy.ps1` use the selected stack, OS, PHP version, package manager and application paths.
 
 The documented default uses GitHub-hosted pull-request/push checks and a deliberate `workflow_dispatch` production release from protected `main`. The release job needs passing checks, a private repository and the `production` environment. A dedicated, non-administrator self-hosted deployment runner on the server polls GitHub over HTTPS. All repository workflow authors must be trusted with its account; labels are routing, not access controls. Private environments and independent approval features depend on the GitHub plan. No repository, runner, credentials or workflow are created by this website.
 
@@ -68,15 +68,17 @@ src/app/                 App Router server entry, metadata, static export, globa
 src/components/          Interactive browser UI, wizard, diagram, tabs, modal and code viewer
 src/content/stacks.ts    Typed path metadata, defaults, review date and source registry
 src/content/guides.ts    Structured teaching tasks, adapted to each stack
-src/content/launch-flow.ts  Stack-specific 5–7 stage composition and optional work
-src/content/windows-guides.ts  Native IIS/PowerShell teaching tasks and sources
+src/content/launch-flow.ts  Stack-specific 5–8 stage composition and optional work
+src/content/windows-guides.ts  Apache/PowerShell teaching tasks and sources
+src/content/databases.ts  Conditional MariaDB/MySQL setup and private Laravel settings
+src/lib/apache.ts  Initial HTTP and final HTTPS Apache configuration
 src/content/platforms.ts  Explicit OS/PHP versions, defaults and support notes
 src/content/automation.ts  Optional six-step CI/CD setup, rationale and recovery
 src/content/glossary.ts  Local definitions used by keyboard/touch disclosures
 src/content/troubleshooting.ts  Symptom, cause, investigation and fix records
 src/lib/types.ts         Shared strict TypeScript contracts
 src/lib/commands.ts      Pure Nginx and systemd configuration generators
-src/lib/windows-commands.ts  IIS XML and WinSW configuration generators
+src/lib/windows-commands.ts  Windows roots and WinSW service XML
 src/lib/cicd.ts          Pinned GitHub workflow and Bash/PowerShell release generators
 src/lib/generator.ts     Public guide-generation interface
 src/lib/validation.ts    Input constraints, POSIX quoting, configuration identity
@@ -89,7 +91,7 @@ Next.js App Router pre-renders the app to static HTML. Interactive components hy
 
 Guide data uses a single typed `Step` contract for goal, rationale, mechanics, prerequisites, command blocks, breakdown, expected result, verification, problems and next action. Screen UI, Markdown and print consume the same data. Commands and configuration are never independently retyped in downloads.
 
-Ubuntu uses Nginx and systemd; Windows uses IIS and one WinSW service for Node. Static sites have no application service. Laravel exposes only its public directory and executes only the PHP front controller. Screen UI, downloads and print consume the same typed content. Keeping OS-specific generators separate avoids mixing shells, service models and privilege assumptions.
+Ubuntu uses Nginx and systemd; Windows uses Apache and one WinSW service for Node. Static sites have no application service. Laravel exposes only its public directory and executes only the PHP front controller. Screen UI, downloads and print consume the same typed content. Keeping OS-specific generators separate avoids mixing shells, service models and privilege assumptions.
 
 ## Input and command safety
 
@@ -130,3 +132,13 @@ Pay particular attention to runtime support dates, NodeSource repository trust, 
 ## Deployment files
 
 `.openai/hosting.json` declares private Sites hosting of `out/`. The app itself is host-independent and contains no Site authentication or runtime integration code. Hosting access controls, if enabled by the provider, exist outside this static application.
+
+### Laravel uploads, databases and React
+
+Laravel has eight launch stages. Windows uses MariaDB 11.4 LTS with a private loopback listener; Ubuntu uses its packaged MySQL. The database task explains how to skip provisioning when an existing/managed database is already prepared. Credentials are entered only on the server and are never requested by the site. Database account names are derived from validated application names with the MySQL length limit.
+
+Git and ZIP/secured transfer instructions explain the actual project root, lockfiles, exclusions and preview-before-copy workflow. Laravel React/Inertia remains one Laravel application: build Vite locally and transfer `public/build`. The guide separates required frontend output from conditional migrations, public-storage links, scheduling and queues. SSR, Reverb and native Windows queue workers require additional reviewed designs.
+
+Windows certificate setup uses win-acme filesystem validation, protected PEM files and an administrator-owned test/restart script. Initial downloads contain HTTP configuration so they do not refer to certificates before issuance; the HTTPS task contains the complete final configuration. CI/CD preserves that Apache configuration outside releases and changes only the reviewed document root to the release junction. Windows and Laravel progress use a new content revision so old checkmarks do not mark the changed tasks complete.
+
+The Apache/MariaDB changes were reviewed against linked primary documentation on 2026-10-30. Automated generation, parsing and browser checks do not establish compatibility on a live Windows or Ubuntu server; rehearse the generated instructions on a matching staging server before production.

@@ -5,11 +5,15 @@ import type { CodeBlock as Code } from "@/lib/types";
 /** A deliberately small, dependency-free lexer. React escapes every text token. */
 function highlight(line: string, language: Code["language"]) {
   const trimmed = line.trimStart();
-  if (trimmed.startsWith("#") || trimmed.startsWith("//"))
+  if (
+    trimmed.startsWith("#") ||
+    trimmed.startsWith("//") ||
+    trimmed.startsWith("--")
+  )
     return <span className="token-comment">{line}</span>;
   return line
     .split(
-      /('[^']*'|"[^"]*"|\$[a-zA-Z_][\w]*|\b(?:sudo|server|location|root|listen|try_files|proxy_pass|fastcgi_pass|const|export|default|true|false|npm|pnpm|php|git|curl|ssh|cd|systemctl)\b)/g,
+      /('[^']*'|"[^"]*"|\$[a-zA-Z_][\w]*|\b(?:DocumentRoot|ServerName|ServerAlias|Require|AllowOverride|RewriteRule|RewriteCond|ProxyPass|SetHandler|CREATE|GRANT|SELECT|sudo|server|location|root|listen|try_files|proxy_pass|fastcgi_pass|const|export|default|true|false|npm|pnpm|php|git|curl|ssh|cd|systemctl)\b)/g,
     )
     .map((token, i) => (
       <span
@@ -19,7 +23,7 @@ function highlight(line: string, language: Code["language"]) {
             ? "token-string"
             : token.startsWith("$")
               ? "token-variable"
-              : /^(sudo|server|location|root|listen|try_files|proxy_pass|fastcgi_pass|const|export|default|true|false|npm|pnpm|php|git|curl|ssh|cd|systemctl)$/.test(
+              : /^(DocumentRoot|ServerName|ServerAlias|Require|AllowOverride|RewriteRule|RewriteCond|ProxyPass|SetHandler|CREATE|GRANT|SELECT|sudo|server|location|root|listen|try_files|proxy_pass|fastcgi_pass|const|export|default|true|false|npm|pnpm|php|git|curl|ssh|cd|systemctl)$/.test(
                     token,
                   )
                 ? "token-keyword"

@@ -52,7 +52,6 @@ test("Windows static release activates and restores previous files after an HTTP
     ])
       mkdirSync(dir, { recursive: true });
     writeFileSync(join(base, "control", "ready"), "");
-    writeFileSync(join(base, "shared", "web.config"), "<configuration />");
     writeFileSync(join(seed, "public", "index.html"), "old release");
     writeFileSync(join(payload, "public", "index.html"), "new release");
     symlinkSync(seed, join(base, "current"), "junction");
@@ -154,7 +153,9 @@ for (const c of configurations)
         ? 5
         : ["vite", "next-static"].includes(c.stack)
           ? 6
-          : 7,
+          : c.stack === "laravel"
+            ? 8
+            : 7,
     );
     assert.equal(
       new Set(guidePages(guide).map((s) => s.id)).size,

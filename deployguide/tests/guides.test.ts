@@ -37,7 +37,14 @@ for (const stack of stacks)
           repository: "https://github.com/example/site.git",
         };
         const guide = generateGuide(config);
-        const count = stack.id === "html" ? 5 : stack.mode === "static" ? 6 : 7;
+        const count =
+          stack.id === "html"
+            ? 5
+            : stack.mode === "static"
+              ? 6
+              : stack.id === "laravel"
+                ? 8
+                : 7;
         assert.equal(guide.steps.length, count);
         assert.equal(new Set(guide.steps.map((s) => s.id)).size, count);
         for (const step of [...guide.steps, ...tasks(guide)]) {
@@ -222,7 +229,7 @@ test("optional Laravel actions are conditional and downloads preserve task conte
   )!;
   assert.ok(keyBlock.optional?.includes("Never regenerate"));
   const md = toMarkdown(g);
-  assert.ok(md.includes("**Optional:**"));
+  assert.ok(md.includes("**When needed:**"));
   for (const part of tasks(g)) {
     assert.ok(md.includes(part.before));
     assert.ok(md.includes(part.expected));

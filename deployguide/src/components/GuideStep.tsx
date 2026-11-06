@@ -146,7 +146,7 @@ export function GuideStep({
                         <details className="optional-task" key={j}>
                           <summary>
                             {b.title}
-                            <span>Optional</span>
+                            <span>When needed</span>
                           </summary>
                           <p>{b.optional}</p>
                           <CodeBlock block={b} />

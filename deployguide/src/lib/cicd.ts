@@ -1,3 +1,4 @@
+import { apacheAccount } from "@/lib/apache";
 import type { GuideConfig } from "./types";
 import {
   assertValid,
@@ -44,7 +45,7 @@ export function generateWorkflow(c: GuideConfig): string {
         : `${install}\n# Required: define a non-interactive ci script that fails on test errors.\n${pm} run ci\n${c.stack === "express" ? (pm === "npm" ? "npm run build --if-present" : "pnpm run --if-present build") : `${pm} run build`}`;
   const archive = isStaticApp(c)
     ? `test -s ${outputFolder(c)}/index.html\ntest -z "$(find ${outputFolder(c)} -name '.env*' -o -name '.git')"\ntar -czf "$artifact_dir/release.tgz" ${outputFolder(c)}`
-    : `# Preserve build output, but never package local secrets or runtime data.\n# Tar is outside the project, so it cannot include itself.\ntar --exclude='./.git' --exclude='./.github' --exclude='./node_modules' --exclude='./vendor' --exclude='./.env*' --exclude='./storage' --exclude='*.sqlite' --exclude='*.sqlite-*' --exclude='*.log' --exclude='./bootstrap/cache/*.php' --exclude='./.next/cache' -czf "$artifact_dir/release.tgz" .`;
+    : `# Preserve build output, but never package local secrets or runtime data.\n# Tar is outside the project, so it cannot include itself.\ntar --exclude='./.git' --exclude='./.github' --exclude='./node_modules' --exclude='./vendor' --exclude='./public/hot' --exclude='./.env*' --exclude='./storage' --exclude='*.sqlite' --exclude='*.sqlite-*' --exclude='*.log' --exclude='./bootstrap/cache/*.php' --exclude='./.next/cache' -czf "$artifact_dir/release.tgz" .`;
   return `# DeployGuide · reviewed 2026-10-29 · single-package repositories only.
 # Read all CI/CD setup steps before enabling the deployment runner.
 name: Checks and release
@@ -298,7 +299,7 @@ ${
     Checked { & ${phpExe} 'C:\\ProgramData\\ComposerSetup\\bin\\composer.phar' check-platform-reqs --no-dev }
     Checked { & ${phpExe} artisan config:cache }
     Checked { & ${phpExe} artisan view:cache }
-    Checked { icacls.exe bootstrap\\cache /grant ${pq("IIS AppPool\\" + c.appName + ":(OI)(CI)(M)")} }
+    Checked { icacls.exe bootstrap\\cache /grant ${pq(apacheAccount + ":(OI)(CI)(M)")} }
 `
     : node
       ? `    Checked { ${c.packageManager === "npm" ? "npm.cmd ci --omit=dev" : "pnpm.cmd install --prod --frozen-lockfile"} }
@@ -314,8 +315,7 @@ ${
 `
 }${
     !node
-      ? `    Copy-Item -LiteralPath "$base\\shared\\web.config" -Destination ${output}\\web.config
-    Set-Content -LiteralPath ${output}\\deployguide-release.txt -Value $ReleaseId -Encoding ascii
+      ? `    Set-Content -LiteralPath ${output}\\deployguide-release.txt -Value $ReleaseId -Encoding ascii
 `
       : ""
   }  } finally { Pop-Location }

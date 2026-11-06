@@ -58,9 +58,16 @@ export function validateConfig(c: GuideConfig): ValidationErrors {
   if (
     !/^[a-z][a-z0-9_-]{0,31}$/.test(c.username) ||
     (isWindows(c.os) && c.username.length > 20) ||
-    ["root", "www-data", "ubuntu", "daemon", "nobody", "bin", "sys"].includes(
-      c.username,
-    )
+    [
+      "dg-httpd",
+      "root",
+      "www-data",
+      "ubuntu",
+      "daemon",
+      "nobody",
+      "bin",
+      "sys",
+    ].includes(c.username)
   )
     errors.username = "Choose a dedicated, non-root username such as deploy.";
   if (
@@ -123,7 +130,9 @@ export function shellQuote(value: string): string {
 }
 export function configKey(c: GuideConfig): string {
   return (
-    "deployguide:progress:v2:" +
+    (isWindows(c.os) || c.stack === "laravel"
+      ? "deployguide:progress:v3:"
+      : "deployguide:progress:v2:") +
     JSON.stringify([
       c.stack,
       c.os,

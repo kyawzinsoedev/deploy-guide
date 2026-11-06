@@ -130,7 +130,7 @@ export function Wizard({
                       {s.name}
                       <small>
                         {isWindows(config.os) && s.mode === "php"
-                          ? "IIS FastCGI"
+                          ? "Apache + PHP"
                           : s.badge}
                       </small>
                     </span>
@@ -143,10 +143,10 @@ export function Wizard({
                 <p>
                   {isWindows(config.os)
                     ? stack.mode === "php"
-                      ? "IIS serves public assets and runs PHP through FastCGI. Only Laravel’s public directory is exposed."
+                      ? "Apache serves public assets and runs PHP as a module. Only Laravel’s public directory is exposed."
                       : stack.mode === "node"
-                        ? "IIS proxies to a private Node Windows service. No Linux systemd commands are used."
-                        : "IIS serves the public files directly. Static builds are created on your computer."
+                        ? "Apache proxies to a private Node Windows service. No Linux systemd commands are used."
+                        : "Apache serves the public files directly. Static builds are created on your computer."
                     : stack.description}
                 </p>
               </div>
@@ -174,8 +174,7 @@ export function Wizard({
                     ))}
                   </select>
                   <small>
-                    Windows uses native IIS. Choose the OS installed on your
-                    server.
+                    Windows uses Apache. Choose the OS installed on your server.
                   </small>
                 </label>
                 {stack.id === "laravel" ? (
@@ -302,7 +301,7 @@ export function Wizard({
                     field(
                       "port",
                       "Private application port",
-                      `1024–65535. ${isWindows(config.os) ? "IIS" : "Nginx"} connects on loopback only.`,
+                      `1024–65535. ${isWindows(config.os) ? "Apache" : "Nginx"} connects on loopback only.`,
                     )}
                   <div className="full-width">
                     {field(
@@ -350,7 +349,7 @@ export function Wizard({
                   <h3>{stack.name}</h3>
                   <p>
                     {isWindows(config.os) && stack.id === "laravel"
-                      ? "IIS FastCGI"
+                      ? "Apache + PHP"
                       : stack.badge}{" "}
                     · {osLabel(config.os)}
                   </p>
@@ -386,10 +385,10 @@ export function Wizard({
                   <dd>
                     {isWindows(config.os)
                       ? stack.mode === "node"
-                        ? "IIS + Windows service"
+                        ? "Apache + Windows service"
                         : stack.mode === "php"
-                          ? "IIS + PHP FastCGI"
-                          : "IIS serves files"
+                          ? "Apache + PHP module"
+                          : "Apache serves files"
                       : stack.mode === "node"
                         ? "systemd + Nginx"
                         : stack.mode === "php"

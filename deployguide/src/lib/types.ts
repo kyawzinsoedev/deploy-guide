@@ -46,6 +46,8 @@ export interface CodeBlock {
     | "xml"
     | "yaml"
     | "nginx"
+    | "apache"
+    | "sql"
     | "ini"
     | "javascript"
     | "text";
@@ -81,7 +83,7 @@ export interface Guide {
   stack: Stack;
   steps: Step[];
   nginx: string;
-  webConfig?: string;
+  apache?: string;
   sources: Source[];
   reviewedOn: string;
   references?: Step[];

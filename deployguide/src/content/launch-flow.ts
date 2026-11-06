@@ -1,3 +1,4 @@
+import { databaseStep, databaseSources } from "./databases";
 import { generateGuide as generateDetailedGuide } from "./guides";
 import { shellQuote as q } from "@/lib/validation";
 import type { CodeBlock, Guide, GuideConfig, Step } from "@/lib/types";
@@ -7,7 +8,9 @@ export function launchStepCount(stack: GuideConfig["stack"]): number {
     ? 5
     : stack === "vite" || stack === "next-static"
       ? 6
-      : 7;
+      : stack === "laravel"
+        ? 8
+        : 7;
 }
 
 function code(
@@ -246,6 +249,7 @@ export function generateLaunchGuide(c: GuideConfig): Guide {
         [byId("runtime"), byId("project")],
       ),
     );
+    if (c.stack === "laravel") steps.push(databaseStep(c));
     const build = byId("build");
     if (c.stack === "laravel")
       build.blocks = build.blocks.map((b) =>
@@ -253,7 +257,7 @@ export function generateLaunchGuide(c: GuideConfig): Guide {
           ? {
               ...b,
               optional:
-                "Only if this Laravel project uses Vite frontend assets. Build locally and upload public/build.",
+                "Required for Laravel React/Inertia starter kits and Vite frontends. Build locally and upload public/build. Skip only if this app has no frontend build.",
             }
           : b,
       );
@@ -347,6 +351,12 @@ export function generateLaunchGuide(c: GuideConfig): Guide {
   }));
   return {
     ...detailed,
+    sources: [
+      ...detailed.sources,
+      ...(c.stack === "laravel"
+        ? databaseSources.filter((s) => /Ubuntu|MySQL 8/.test(s.label))
+        : []),
+    ],
     steps,
     references: [
       { ...byId("architecture"), title: "How your deployment works" },
